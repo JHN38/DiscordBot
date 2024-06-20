@@ -1,0 +1,6 @@
+@DiscordBot.Bot_HostAddress = http://localhost:5032
+
+GET {{DiscordBot.Bot_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
