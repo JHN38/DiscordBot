@@ -21,7 +21,6 @@ if (builder.Environment.IsDevelopment())
 // Add services to the container.
 builder.Services.Configure<BotOptions>(builder.Configuration.GetSection("Bot"));
 
-builder.Services.AddApplication();
 builder.Services.AddSingleton((s) =>
     {
         var options = s.GetRequiredService<IOptions<BotOptions>>();
@@ -41,6 +40,9 @@ builder.Services.AddSingleton((s) =>
     .AddSingleton<DiscordSocketClient>()
     .AddSingleton(s => new InteractionService(s.GetRequiredService<DiscordSocketClient>()))
     .AddHostedService<Worker>();
+
+// Add the application services
+builder.Services.AddApplication();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -1,10 +1,8 @@
-﻿using System.Reflection;
-using Discord;
-using Discord.Interactions;
+﻿using Discord;
 using Discord.WebSocket;
 using DiscordBot.Application.Common.Configuration;
-using DiscordBot.Domain.Notifications.Client;
-using DiscordBot.Domain.Notifications.Commands;
+using DiscordBot.Domain.Client.Events;
+using DiscordBot.Domain.Guild.Events;
 using MediatR;
 using Microsoft.Extensions.Options;
 
@@ -13,38 +11,24 @@ namespace DiscordBot.Bot.Services;
 public class Worker(ILogger<Worker> logger,
                     DiscordSocketClient client,
                     IOptions<BotOptions> botOptions,
-                    InteractionService commands,
-                    IServiceProvider services,
                     IMediator mediator) : IHostedService
 {
     public async Task StartAsync(CancellationToken stoppingToken)
     {
         try
         {
-            client.Log += async (message) => await mediator.Publish(new CommandLogNotification(message), stoppingToken);
-            commands.Log += async (message) => await mediator.Publish(new CommandLogNotification(message), stoppingToken);
-
+            client.Log += async (message) => await mediator.Publish(new ClientLogNotification(message), stoppingToken);
             client.MessageReceived += async (message) => await mediator.Publish(new ClientMessageReceivedNotification(message), stoppingToken);
             client.Ready += async () => await mediator.Publish(new ClientReadyNotification(), stoppingToken);
-
-            await client.LoginAsync(TokenType.Bot, botOptions.Value.Token);
-            await client.StartAsync();
-
-            await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), services);
+            client.PresenceUpdated += async (user, oldPresence, newPresence) => await mediator.Publish(new GuildPresenceUpdateNotification(user, oldPresence, newPresence), stoppingToken);
+            client.GuildScheduledEventCreated += async (guildEvent) => await mediator.Publish(new GuildScheduledEventNotification(guildEvent), stoppingToken);
+            client.InviteCreated += async (invite) => await mediator.Publish(new GuildInviteCreatedNotification(invite), stoppingToken);
 
             // process the InteractionCreated payloads to execute Interactions commands
             client.InteractionCreated += async (socketInteration) => await mediator.Publish(new ClientInteractionCreatedNotification(socketInteration), stoppingToken);
 
-            // process the command execution results 
-            commands.SlashCommandExecuted += async (info, context, result)
-                => await mediator.Publish(new SlashCommandExecutedNotification(info, context, result), stoppingToken);
-
-            commands.ContextCommandExecuted += async (info, context, result)
-                => await mediator.Publish(new ContextCommandExecutedNotification(info, context, result), stoppingToken);
-
-            commands.ComponentCommandExecuted += async (info, context, result)
-                => await mediator.Publish(new ComponentCommandExecutedNotification(info, context, result), stoppingToken);
-
+            await client.LoginAsync(TokenType.Bot, botOptions.Value.Token);
+            await client.StartAsync();
         }
         catch (Exception ex)
         {
