@@ -7,8 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ChatGptNet" Version="3.2.15" />
     <PackageReference Include="Discord.Net" Version="3.15.2" />
     <PackageReference Include="Discord.Net.Interactions" Version="3.15.2" />
+    <PackageReference Include="Google.Apis.CustomSearchAPI.v1" Version="1.68.0.3395" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
   </ItemGroup>

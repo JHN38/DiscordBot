@@ -2,7 +2,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Guild.Events;
+namespace DiscordBot.Application.Discord.Guild.Events;
 
 public class GuildScheduledEventNotificationHandler(ILogger<GuildScheduledEventNotificationHandler> logger) : INotificationHandler<GuildScheduledEventNotification>
 {

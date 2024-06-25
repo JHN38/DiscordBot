@@ -2,7 +2,7 @@
 using DiscordBot.Domain.DirectMessage.Events;
 using MediatR;
 
-namespace DiscordBot.Application.DirectMessage.Events;
+namespace DiscordBot.Application.Discord.DirectMessage.Events;
 
 public class DirectMessageReceivedHandler(IMediator mediator) : INotificationHandler<DirectMessageReceivedNotification>
 {

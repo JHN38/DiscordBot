@@ -2,7 +2,7 @@
 using DiscordBot.Domain.Guild.Events;
 using MediatR;
 
-namespace DiscordBot.Application.Guild.Events;
+namespace DiscordBot.Application.Discord.Guild.Events;
 
 public class GuildMessageReceivedNotificationHandler(IMediator mediator) : INotificationHandler<GuildMessageReceivedNotification>
 {

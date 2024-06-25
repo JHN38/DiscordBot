@@ -19,8 +19,6 @@ if (builder.Environment.IsDevelopment())
 }
 
 // Add services to the container.
-builder.Services.Configure<BotOptions>(builder.Configuration.GetSection("Bot"));
-
 builder.Services.AddSingleton((s) =>
     {
         var options = s.GetRequiredService<IOptions<BotOptions>>();
@@ -42,7 +40,7 @@ builder.Services.AddSingleton((s) =>
     .AddHostedService<Worker>();
 
 // Add the application services
-builder.Services.AddApplication();
+builder.Services.AddApplication(builder.Configuration);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -51,7 +49,34 @@ builder.Services.AddSwaggerGen();
 
 // Add serilog
 builder.Host.UseSerilog((ctx, config) =>
-        config.ReadFrom.Configuration(ctx.Configuration));
+    config.Enrich.FromLogContext()
+        //.WriteTo.OpenTelemetry(options =>
+        //{
+        //    options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]!;
+        //    var headers = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"]?.Split(',') ?? [];
+        //    foreach (var header in headers)
+        //    {
+        //        var (key, value) = header.Split('=') switch
+        //        {
+        //            [string k, string v] => (k, v),
+        //            var v => throw new Exception($"Invalid header format {v}")
+        //        };
+
+        //        options.Headers.Add(key, value);
+        //    }
+        //    options.ResourceAttributes.Add("service.name", "discordbot-bot");
+
+        //    //To remove the duplicate issue, we can use the below code to get the key and value from the configuration
+        //    var (otelResourceAttribute, otelResourceAttributeValue) = builder.Configuration["OTEL_RESOURCE_ATTRIBUTES"]?.Split('=') switch
+        //    {
+        //    [string k, string v] => (k, v),
+        //        _ => throw new Exception($"Invalid header format {builder.Configuration["OTEL_RESOURCE_ATTRIBUTES"]}")
+        //    };
+
+        //    options.ResourceAttributes.Add(otelResourceAttribute, otelResourceAttributeValue);
+        //})
+        .ReadFrom.Configuration(ctx.Configuration)
+);
 
 var app = builder.Build();
 

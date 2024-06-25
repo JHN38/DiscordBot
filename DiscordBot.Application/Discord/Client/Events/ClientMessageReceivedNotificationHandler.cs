@@ -5,7 +5,7 @@ using DiscordBot.Domain.Guild.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Client.Events;
+namespace DiscordBot.Application.Discord.Client.Events;
 
 public class ClientMessageReceivedHandler(ILogger<ClientMessageReceivedHandler> logger,
                                           IMediator mediator) : INotificationHandler<ClientMessageReceivedNotification>

@@ -1,14 +1,17 @@
-﻿using Discord;
+﻿using System.Text.RegularExpressions;
+using Discord;
 using Discord.WebSocket;
 using DiscordBot.Domain.Commands.Events;
 using DiscordBot.Domain.Guild.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Guild.Events;
+namespace DiscordBot.Application.Discord.Guild.Events;
 
-public class GuildUserMessageReceivedHandler(ILogger<GuildUserMessageReceivedHandler> logger, IMediator mediator) : INotificationHandler<GuildUserMessageReceivedNotification>
+public partial class GuildUserMessageReceivedHandler(ILogger<GuildUserMessageReceivedHandler> logger, IMediator mediator) : INotificationHandler<GuildUserMessageReceivedNotification>
 {
+    private static readonly Regex _searchCommandRegex = SearchCommandRegex();
+
     public async Task Handle(GuildUserMessageReceivedNotification notification, CancellationToken cancellationToken)
     {
         var message = notification.Message;
@@ -33,7 +36,19 @@ public class GuildUserMessageReceivedHandler(ILogger<GuildUserMessageReceivedHan
             await mediator.Publish(new MentionCommandNotification(message), cancellationToken);
         }
 
-        await Task.CompletedTask;
+        var match = SearchCommandRegex().Match(message.Content);
+        if (match.Success)
+        {
+            var resultCount = match.Groups[1].Value switch
+            {
+                "" => 1,
+                var s when int.TryParse(s, out var n) => Math.Clamp(n, 1, 9),
+                _ => 1
+            };
+            var query = match.Groups[2].Value;
+
+            await mediator.Publish(new SearchCommandNotification(message, query, resultCount), cancellationToken);
+        }
     }
 
     public static bool BotMentionedFirst(SocketMessage message, ulong botId)
@@ -45,10 +60,8 @@ public class GuildUserMessageReceivedHandler(ILogger<GuildUserMessageReceivedHan
         return span.StartsWith(mention.AsSpan(), StringComparison.Ordinal) || span.StartsWith(mentionWithNickname.AsSpan(), StringComparison.Ordinal);
     }
 
-    public static string? StripMention(string content)
-    {
-        var span = content.AsSpan();
-
-        return span[(span.IndexOf(' ') + 1)..].ToString();
-    }
+    [GeneratedRegex("""
+        ^>search(\d?)\s+(.*)
+        """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex SearchCommandRegex();
 }

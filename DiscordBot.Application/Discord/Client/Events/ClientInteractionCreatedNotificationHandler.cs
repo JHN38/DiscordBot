@@ -5,7 +5,7 @@ using DiscordBot.Domain.Client.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Client.Events;
+namespace DiscordBot.Application.Discord.Client.Events;
 
 public class ClientInteractionCreatedNotificationHandler(ILogger<ClientInteractionCreatedNotificationHandler> logger,
                                                          DiscordSocketClient client,

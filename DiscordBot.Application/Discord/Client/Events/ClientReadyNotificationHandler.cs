@@ -8,7 +8,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DiscordBot.Application.Client.Events;
+namespace DiscordBot.Application.Discord.Client.Events;
 
 public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandler> logger,
     DiscordSocketClient client,

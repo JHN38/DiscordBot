@@ -3,9 +3,9 @@ using DiscordBot.Domain.Guild.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Guild.Events;
+namespace DiscordBot.Application.Discord.Guild.Events;
 
-public class GuildPresenceUpdateNotificationHandler(ILogger<GuildPresenceUpdateNotificationHandler> logger) : INotificationHandler<GuildPresenceUpdateNotification>
+public class GuildPresenceUpdateNotificationHandler : INotificationHandler<GuildPresenceUpdateNotification>
 {
     public async Task Handle(GuildPresenceUpdateNotification notification, CancellationToken cancellationToken)
     {

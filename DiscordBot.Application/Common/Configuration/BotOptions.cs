@@ -1,8 +1,8 @@
 ﻿namespace DiscordBot.Application.Common.Configuration;
 
-public class BotOptions
+public record BotOptions
 {
-    public bool AlwaysDownloadUsers { get; set; }
-    public string? Token { get; set; }
-    public ulong GuildId { get; set; } = 0x0;
+    public bool AlwaysDownloadUsers { get; init; }
+    public string? Token { get; init; }
+    public ulong GuildId { get; init; } = 0x0;
 }

@@ -3,7 +3,7 @@ using DiscordBot.Domain.Guild.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Guild.Events;
+namespace DiscordBot.Application.Discord.Guild.Events;
 
 public class GuildSystemMessageReceivedHandler(ILogger<GuildSystemMessageReceivedHandler> logger) : INotificationHandler<GuildSystemMessageReceivedNotification>
 {
