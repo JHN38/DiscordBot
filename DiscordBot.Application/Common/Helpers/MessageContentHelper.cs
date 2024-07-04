@@ -1,8 +1,26 @@
-﻿namespace DiscordBot.Application.Common.Helpers;
+﻿using Discord;
+using Discord.WebSocket;
+
+namespace DiscordBot.Application.Common.Helpers;
 
 internal class MessageContentHelper
 {
-    public static string? StripMention(string content)
+    public static async Task<string> MentionsToText(SocketUserMessage message)
+    {
+        var msg = message.Content;
+
+        var guildChannel = (IGuildChannel)message.Channel;
+        var guild = guildChannel.Guild;
+
+        foreach (var mentionedUser in message.MentionedUsers)
+        {
+            var user = await guild.GetUserAsync(mentionedUser.Id);
+            msg = msg.Replace(user.Mention, $"@{user.DisplayName ?? user.GlobalName ?? user.Username}");
+        }
+
+        return msg;
+    }
+    public static string? StripBotMention(string content)
     {
         var span = content.AsSpan();
         content = span[(span.IndexOf(' ') + 1)..].ToString();

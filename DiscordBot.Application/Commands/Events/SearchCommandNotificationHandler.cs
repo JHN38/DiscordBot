@@ -60,21 +60,3 @@ public class SearchCommandNotificationHandler(ILogger<SearchCommandNotificationH
         }
     }
 }
-
-//var responseBuffer = string.Empty;
-//var initialMessage = await message.Channel.SendMessageAsync("```\n```");
-//var chunksCount = 1;
-
-//await foreach (var chunk in chatGptClient.AskStreamAsync(messageContent, cancellationToken: cancellationToken))
-//{
-//    var responseMessage = chunk.GetContent();
-//    responseBuffer += responseMessage;
-
-//    // Update the message with the new content
-//    if (chunksCount++ % 5 == 0)
-//    {
-//        await initialMessage.ModifyAsync(msg => msg.Content = $"```\n{responseBuffer}\n```");
-//    }
-
-//    await Task.Delay(200, cancellationToken);
-//}

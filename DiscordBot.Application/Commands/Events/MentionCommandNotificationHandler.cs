@@ -15,7 +15,7 @@ public class MentionCommandNotificationHandler(ILogger<MentionCommandNotificatio
     public async Task Handle(MentionCommandNotification notification, CancellationToken cancellationToken)
     {
         var message = notification.Message;
-        if (MessageContentHelper.StripMention(message.Content) is not string messageContent)
+        if (MessageContentHelper.StripBotMention(message.Content) is not string messageContent)
             return;
 
         var guildChannel = (IGuildChannel)message.Channel;
@@ -47,21 +47,3 @@ public class MentionCommandNotificationHandler(ILogger<MentionCommandNotificatio
         }
     }
 }
-
-//var responseBuffer = string.Empty;
-//var initialMessage = await message.Channel.SendMessageAsync("```\n```");
-//var chunksCount = 1;
-
-//await foreach (var chunk in chatGptClient.AskStreamAsync(messageContent, cancellationToken: cancellationToken))
-//{
-//    var responseMessage = chunk.GetContent();
-//    responseBuffer += responseMessage;
-
-//    // Update the message with the new content
-//    if (chunksCount++ % 5 == 0)
-//    {
-//        await initialMessage.ModifyAsync(msg => msg.Content = $"```\n{responseBuffer}\n```");
-//    }
-
-//    await Task.Delay(200, cancellationToken);
-//}
