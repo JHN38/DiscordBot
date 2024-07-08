@@ -1,14 +1,12 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using System.Globalization;
 using CountryData.Standard;
 using Discord;
 using DiscordBot.Application.Weather.Helper;
-using System.Globalization;
 using DiscordBot.Domain.Weather.Commands;
 using DiscordBot.Domain.Weather.Enums;
 using DiscordBot.Domain.Weather.Models;
-using DiscordBot.Application.Common.Configuration;
-using Google.Apis.Http;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace DiscordBot.Application.WebSearch.Commands;
 

@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using DiscordBot.Domain.Commands.Events;
+﻿using DiscordBot.Domain.Commands.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

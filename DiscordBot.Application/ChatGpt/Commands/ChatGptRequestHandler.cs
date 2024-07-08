@@ -1,5 +1,4 @@
-﻿using System.Runtime.Intrinsics.X86;
-using ChatGptNet;
+﻿using ChatGptNet;
 using ChatGptNet.Extensions;
 using DiscordBot.Domain.ChatGpt.Commands;
 using MediatR;

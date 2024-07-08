@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace DiscordBot.Application.Weather.Helper;
+﻿namespace DiscordBot.Application.Weather.Helper;
 
 /// <summary>
 /// Provides a method to convert OpenWeatherApi weather descriptions into corresponding emojis.

@@ -1,5 +1,4 @@
-﻿using ChatGptNet.Models;
-using MediatR;
+﻿using MediatR;
 
 namespace DiscordBot.Domain.ChatGpt.Commands;
 

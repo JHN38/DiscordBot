@@ -1,5 +1,4 @@
-﻿using Discord.WebSocket;
-using DiscordBot.Domain.WebSearch.Models;
+﻿using DiscordBot.Domain.WebSearch.Models;
 using MediatR;
 
 namespace DiscordBot.Domain.WebSearch.Commands;

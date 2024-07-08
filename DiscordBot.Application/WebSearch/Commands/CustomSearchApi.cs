@@ -1,7 +1,4 @@
-﻿using Discord;
-using System.Reactive;
-using DiscordBot.Application.Common.Configuration;
-using DiscordBot.Application.Common.Helpers;
+﻿using DiscordBot.Application.Common.Configuration;
 using DiscordBot.Domain.WebSearch.Commands;
 using DiscordBot.Domain.WebSearch.Models;
 using Google.Apis.CustomSearchAPI.v1;

@@ -1,13 +1,13 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
-using DiscordBot.Domain.Weather.Models;
-using DiscordBot.Domain.Weather.Commands;
+﻿using System.Text.Json;
 using DiscordBot.Application.Common.Configuration;
-using Microsoft.Extensions.Options;
-using System.Text.Json;
 using DiscordBot.Domain.Weather.Apis;
+using DiscordBot.Domain.Weather.Commands;
 using DiscordBot.Domain.Weather.Enums;
+using DiscordBot.Domain.Weather.Models;
+using MediatR;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Application.WebSearch.Commands;
 

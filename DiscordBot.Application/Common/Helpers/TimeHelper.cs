@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using NodaTime;
+﻿using NodaTime;
 using NodaTime.TimeZones;
 
 namespace DiscordBot.Application.Common.Helpers;

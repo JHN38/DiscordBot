@@ -18,7 +18,6 @@ public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandl
 {
     public async Task Handle(ClientReadyNotification notification, CancellationToken cancellationToken)
     {
-#if DEBUG
         // this is where you put the id of the test discord guild
         logger.LogInformation("Bot ready in Debug mode...");
 
@@ -49,13 +48,12 @@ public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandl
                     logger.LogDebug("Registering {type} command \"{command}\" from module \"{module}\".", command.CommandType, command.Name, module.Name);
                 }
             }
-
-            await commands.RegisterCommandsToGuildAsync(botOptions.Value.GuildId, true);
+            //#if DEBUG
+            //            await commands.RegisterCommandsToGuildAsync(botOptions.Value.GuildId, true);
+            //#else
+            await commands.RegisterCommandsGloballyAsync(true);
+            //#endif
         }
-#else
-        _logger.LogInformation("Bot ready in Production mode...");
-        //await _commands.RegisterCommandsGloballyAsync(true);
-#endif
 
         logger.LogInformation("Connected as -> [{currentUser}] :)", client.CurrentUser.Username);
 

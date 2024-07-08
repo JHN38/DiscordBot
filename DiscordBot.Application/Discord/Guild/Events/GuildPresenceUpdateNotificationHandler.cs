@@ -1,7 +1,5 @@
-﻿using System.Text.Json;
-using DiscordBot.Domain.Guild.Events;
+﻿using DiscordBot.Domain.Guild.Events;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace DiscordBot.Application.Discord.Guild.Events;
 

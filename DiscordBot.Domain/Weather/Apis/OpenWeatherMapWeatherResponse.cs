@@ -1,6 +1,5 @@
 ﻿using System.Text.Json.Serialization;
 using DiscordBot.Domain.Weather.Models;
-using Weather.NET.Models.WeatherModel;
 
 namespace DiscordBot.Domain.Weather.Apis;
 
