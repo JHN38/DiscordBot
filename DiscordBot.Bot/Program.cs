@@ -34,7 +34,7 @@ builder.Services.AddEndpointsApiExplorer();
 // Add services to the container.
 builder.Services.AddSingleton((serviceProvider) =>
     {
-        var options = serviceProvider.GetRequiredService<IOptions<BotOptions>>().Value;
+        var options = serviceProvider.GetRequiredService<IOptions<BotConfig>>().Value;
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
         var defaultLogLevel = LogLevelHelper.GetDefaultSerilogLogLevel(builder.Configuration) ?? LogEventLevel.Information;
 

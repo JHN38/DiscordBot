@@ -1,27 +1,42 @@
 ﻿using System.Text.Json.Serialization;
-using DiscordBot.Domain.Weather.Models;
+using DiscordBot.Domain.Weather.Interfaces;
 
-namespace DiscordBot.Domain.Weather.Apis;
+namespace DiscordBot.Domain.Weather.Models.OpenWeatherMap;
 
-public static partial class OpenWeatherMapExtensions
+public class OpenWeatherMapForecastResponse : IApiWeatherResponse
 {
+    [JsonPropertyName("cod")]
+    public string? Cod { get; set; }
+
+    [JsonPropertyName("message")]
+    public int Message { get; set; }
+
+    [JsonPropertyName("cnt")]
+    public int Cnt { get; set; }
+
+    [JsonPropertyName("list")]
+    public List<Forecast>? List { get; set; }
+
+    [JsonPropertyName("city")]
+    public City? City { get; set; }
+
     /// <summary>
     /// Converts an OpenWeatherMapForecastResponse to a list of WeatherResponse.
     /// </summary>
     /// <param name="forecastResponse">The OpenWeatherMap forecast response.</param>
     /// <returns>A list of WeatherResponse.</returns>
-    public static List<WeatherResponse> ToWeatherResponseList(this OpenWeatherMapForecastResponse forecastResponse)
+    public List<WeatherResponse> ToWeatherResponseList()
     {
-        return forecastResponse.List?.Select(forecast => new WeatherResponse
+        return List?.Select(forecast => new WeatherResponse
         {
             Location = new Location
             {
-                Id = forecastResponse.City?.Id ?? 0,
-                City = forecastResponse.City?.Name,
-                Country = forecastResponse.City?.Country,
-                Longitude = forecastResponse.City?.Coord?.Lon ?? 0,
-                Latitude = forecastResponse.City?.Coord?.Lat ?? 0,
-                Timezone = forecastResponse.City?.Timezone ?? 0
+                Id = City?.Id ?? 0,
+                City = City?.Name,
+                Country = City?.Country,
+                Longitude = City?.Coord?.Lon ?? 0,
+                Latitude = City?.Coord?.Lat ?? 0,
+                Timezone = City?.Timezone ?? 0
             },
             Title = forecast.Weather?.FirstOrDefault()?.Main,
             Description = forecast.Weather?.FirstOrDefault()?.Description,
@@ -38,8 +53,8 @@ public static partial class OpenWeatherMapExtensions
             Visibility = forecast.Visibility,
             Clouds = forecast.Clouds?.All ?? 0,
             DateTime = DateTimeOffset.FromUnixTimeSeconds(forecast.Dt).DateTime,
-            Sunrise = forecastResponse.City?.Sunrise ?? 0,
-            Sunset = forecastResponse.City?.Sunset ?? 0,
+            Sunrise = City?.Sunrise ?? 0,
+            Sunset = City?.Sunset ?? 0,
             Wind = new Models.Wind
             {
                 Speed = forecast.Wind?.Speed ?? 0,
@@ -47,24 +62,6 @@ public static partial class OpenWeatherMapExtensions
             }
         }).ToList() ?? [];
     }
-}
-
-public class OpenWeatherMapForecastResponse
-{
-    [JsonPropertyName("cod")]
-    public string? Cod { get; set; }
-
-    [JsonPropertyName("message")]
-    public int Message { get; set; }
-
-    [JsonPropertyName("cnt")]
-    public int Cnt { get; set; }
-
-    [JsonPropertyName("list")]
-    public List<Forecast>? List { get; set; }
-
-    [JsonPropertyName("city")]
-    public City? City { get; set; }
 }
 
 public class Forecast

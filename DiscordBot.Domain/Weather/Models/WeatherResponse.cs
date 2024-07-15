@@ -1,63 +1,63 @@
 ﻿namespace DiscordBot.Domain.Weather.Models;
 
-public class WeatherResponse
+public record WeatherResponse
 {
-    public Location Location { get; set; } = new();
+    public Location Location { get; init; } = new();
 
-    public string? Title { get; set; }
+    public string? Title { get; init; }
 
-    public string? Description { get; set; }
+    public string? Description { get; init; }
 
-    public string? IconUrl { get; set; }
+    public string? IconUrl { get; init; }
 
-    public Temperature Temperature { get; set; } = new();
+    public Temperature Temperature { get; init; } = new();
 
-    public int Pressure { get; set; }
+    public int Pressure { get; init; }
 
-    public int Humidity { get; set; }
+    public int Humidity { get; init; }
 
-    public int Visibility { get; set; }
+    public int Visibility { get; init; }
 
-    public int Clouds { get; set; }
+    public int Clouds { get; init; }
 
-    public DateTime DateTime { get; set; }
+    public DateTime DateTime { get; init; }
 
-    public long Sunrise { get; set; }
+    public long Sunrise { get; init; }
 
-    public long Sunset { get; set; }
+    public long Sunset { get; init; }
 
-    public Wind Wind { get; set; } = new();
+    public Wind Wind { get; init; } = new();
 }
 
-public class Location
+public record Location
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    public string? City { get; set; }
+    public string? City { get; init; }
 
-    public string? Country { get; set; }
+    public string? Country { get; init; }
 
-    public double Longitude { get; set; }
+    public double Longitude { get; init; }
 
-    public double Latitude { get; set; }
+    public double Latitude { get; init; }
 
-    public int Timezone { get; set; }
+    public int Timezone { get; init; }
 }
 
-public class Temperature
+public record Temperature
 {
-    public double Temp { get; set; }
+    public double Temp { get; init; }
 
-    public double FeelsLike { get; set; }
+    public double FeelsLike { get; init; }
 
-    public double TempMin { get; set; }
+    public double TempMin { get; init; }
 
-    public double TempMax { get; set; }
+    public double TempMax { get; init; }
 }
 
-public class Wind
+public record Wind
 {
-    public double Speed { get; set; }
+    public double Speed { get; init; }
 
-    public int Deg { get; set; }
+    public int Deg { get; init; }
 }

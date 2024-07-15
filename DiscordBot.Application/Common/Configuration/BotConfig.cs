@@ -1,6 +1,6 @@
 ﻿namespace DiscordBot.Application.Common.Configuration;
 
-public record BotOptions
+public record BotConfig
 {
     public bool AlwaysDownloadUsers { get; init; }
     public string? Token { get; init; }

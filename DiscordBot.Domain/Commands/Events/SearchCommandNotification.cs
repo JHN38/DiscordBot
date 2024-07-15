@@ -3,4 +3,4 @@ using MediatR;
 
 namespace DiscordBot.Domain.Commands.Events;
 
-public record SearchCommandNotification(SocketUserMessage Message, string Query, int ResultCount = 1) : INotification;
+public record SearchCommandNotification(SocketUserMessage Message, string Query, int ResultCount = 1, string? Country = null) : INotification;

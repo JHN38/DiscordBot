@@ -14,7 +14,7 @@ public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandl
     DiscordSocketClient client,
     InteractionService commands,
     IMediator mediator,
-    IOptions<BotOptions> botOptions) : INotificationHandler<ClientReadyNotification>
+    IOptions<BotConfig> botOptions) : INotificationHandler<ClientReadyNotification>
 {
     public async Task Handle(ClientReadyNotification notification, CancellationToken cancellationToken)
     {

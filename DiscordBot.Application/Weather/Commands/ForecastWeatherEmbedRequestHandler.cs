@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DiscordBot.Application.WebSearch.Commands;
 
-public class ForecastWeatherRequestHandler(ILogger<ForecastWeatherRequestHandler> logger,
+public class ForecastWeatherEmbedRequestHandler(ILogger<ForecastWeatherEmbedRequestHandler> logger,
                                           IMediator mediator,
                                           CountryHelper countryHelper) : IRequestHandler<ForecastWeatherRequest, Embed?>
 {

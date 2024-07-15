@@ -11,11 +11,6 @@ namespace DiscordBot.Application.Discord.Guild.Events;
 
 public sealed partial class GuildUserMessageReceivedHandler(ILogger<GuildUserMessageReceivedHandler> logger, IMediator mediator) : INotificationHandler<GuildUserMessageReceivedNotification>
 {
-    [GeneratedRegex("""
-        ^>(?<cmd>weather|w|search|s)(?<subcmd>\w+)?\s+(?<arg>.*)
-        """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
-    private static partial Regex CommandRegex();
-
     public async Task Handle(GuildUserMessageReceivedNotification notification, CancellationToken cancellationToken)
     {
         var message = notification.Message;
@@ -25,17 +20,12 @@ public sealed partial class GuildUserMessageReceivedHandler(ILogger<GuildUserMes
 
         var author = await guild.GetUserAsync(message.Author.Id);
 
-        logger.LogInformation("({guild}) #{channel} <{user}> {message}",
+        logger.LogInformation("({Guild}) #{Channel} <{User}> {Message}",
             guild.Name, guildChannel.Name, author.DisplayName, await MessageContentHelper.MentionsToText(message));
 
-        var weatherMatch = CommandRegex().Match(message.Content);
-        if (weatherMatch.Success)
+        if (message.Content.StartsWith('>') && message.Content.Length > 2)
         {
-            var command = weatherMatch.Groups["cmd"].Value;
-            var subCommand = weatherMatch.Groups["subcmd"].Value;
-            var arg = weatherMatch.Groups["arg"].Value;
-
-            await mediator.Publish(new TextCommandNotification(message, command, subCommand, arg), cancellationToken);
+            await mediator.Publish(new TextCommandNotification(message, message.Content[1..]), cancellationToken);
         }
 
         // @bot mention command

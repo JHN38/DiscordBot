@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using DiscordBot.Application.Common.Configuration;
-using DiscordBot.Domain.Weather.Apis;
+using DiscordBot.Domain.Weather.Models.OpenWeatherMap;
 using DiscordBot.Domain.Weather.Commands;
 using DiscordBot.Domain.Weather.Enums;
 using DiscordBot.Domain.Weather.Models;
@@ -8,6 +8,7 @@ using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using DiscordBot.Domain.Weather.Interfaces;
 
 namespace DiscordBot.Application.WebSearch.Commands;
 
@@ -16,7 +17,7 @@ namespace DiscordBot.Application.WebSearch.Commands;
 /// </summary>
 public class OpenWeatherMapRequestHandler(ILogger<OpenWeatherMapRequestHandler> logger,
                                    IHttpClientFactory httpClientFactory,
-                                   IOptions<WeatherOptions> weatherOptions,
+                                   IOptions<OpenWeatherMapConfig> weatherOptions,
                                    IMemoryCache memoryCache) : IRequestHandler<WeatherRequest, List<WeatherResponse>?>
 {
     /// <summary>
@@ -67,16 +68,11 @@ public class OpenWeatherMapRequestHandler(ILogger<OpenWeatherMapRequestHandler> 
         if (string.IsNullOrWhiteSpace(response))
             return null;
 
-        if (requestType == WeatherRequestType.Weather && JsonSerializer.Deserialize<OpenWeatherMapWeatherResponse>(response) is OpenWeatherMapWeatherResponse weatherResponse)
+        return requestType switch
         {
-            return [weatherResponse.ToWeatherResponse()];
-        }
-
-        if (requestType == WeatherRequestType.Forecast && JsonSerializer.Deserialize<OpenWeatherMapForecastResponse>(response) is OpenWeatherMapForecastResponse forecastResponse)
-        {
-            return forecastResponse.ToWeatherResponseList();
-        }
-
-        return null;
+            WeatherRequestType.Weather => JsonSerializer.Deserialize<OpenWeatherMapWeatherResponse>(response)?.ToWeatherResponseList() ?? null,
+            WeatherRequestType.Forecast => JsonSerializer.Deserialize<OpenWeatherMapForecastResponse>(response)?.ToWeatherResponseList() ?? null,
+            _ => null
+        };
     }
 }

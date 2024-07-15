@@ -10,7 +10,7 @@ namespace DiscordBot.Bot.Services;
 
 public class Worker(ILogger<Worker> logger,
                     DiscordSocketClient client,
-                    IOptions<BotOptions> botOptions,
+                    IOptions<BotConfig> botOptions,
                     IMediator mediator) : IHostedService
 {
     public async Task StartAsync(CancellationToken stoppingToken)

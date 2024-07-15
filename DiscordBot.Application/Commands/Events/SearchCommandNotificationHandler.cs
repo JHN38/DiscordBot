@@ -1,6 +1,7 @@
 ﻿using Discord;
 using DiscordBot.Domain.Commands.Events;
 using DiscordBot.Domain.WebSearch.Commands;
+using DiscordBot.Domain.WebSearch.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +24,7 @@ public class SearchCommandNotificationHandler(ILogger<SearchCommandNotificationH
             {
                 var response = await mediator.Send(new WebSearchRequest(query, notification.ResultCount), cancellationToken);
 
-                if (!response.Any())
+                if (response.Items.IsEmpty)
                 {
                     logger.LogWarning("Search \"{Query}\" by user {User} yielded no results.", query, user);
                     await message.ReplyAsync($"Search \"{query}\" yielded no results.");
@@ -31,7 +32,7 @@ public class SearchCommandNotificationHandler(ILogger<SearchCommandNotificationH
                 }
 
                 var replyCount = 0;
-                foreach (var item in response.Take(5))
+                foreach (var item in response.Items.Take(5))
                 {
                     var embedBuilder = new EmbedBuilder()
                         .WithTitle(item.Title)
@@ -39,9 +40,9 @@ public class SearchCommandNotificationHandler(ILogger<SearchCommandNotificationH
                         .WithColor(Color.Blue)
                         .WithDescription(item.Snippet);
 
-                    if (item.ThumbnailUrl != null)
+                    if (item.Thumbnails.Count != 0 && item.Thumbnails.First(t => t.Src != null) is WebSearchImage thumbnail)
                     {
-                        embedBuilder.WithThumbnailUrl(item.ThumbnailUrl);
+                        embedBuilder.WithThumbnailUrl(thumbnail.Src);
                     }
 
                     if (replyCount++ == 0)
