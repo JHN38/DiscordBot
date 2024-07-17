@@ -83,4 +83,4 @@ app.MapDefaultEndpoints();
 app.UseRequestTimeouts();
 app.UseOutputCache();
 
-app.Run();
+await app.RunAsync();

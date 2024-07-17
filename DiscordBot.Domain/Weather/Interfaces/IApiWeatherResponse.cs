@@ -4,5 +4,5 @@ namespace DiscordBot.Domain.Weather.Interfaces;
 
 public interface IApiWeatherResponse
 {
-    public List<WeatherResponse> ToWeatherResponseList();
+    public WeatherResponse ToWeatherResponse();
 }

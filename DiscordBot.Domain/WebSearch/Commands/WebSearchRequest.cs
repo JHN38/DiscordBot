@@ -3,4 +3,4 @@ using MediatR;
 
 namespace DiscordBot.Domain.WebSearch.Commands;
 
-public record WebSearchRequest(string Query, int ResultCount = 1) : IRequest<WebSearchResult>;
+public record WebSearchRequest(string Query, int? ResultCount = null, string? CountryRestriction = null, string? LanguageRestriction = null) : IRequest<WebSearchResult>;

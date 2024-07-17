@@ -1,15 +1,15 @@
-﻿using DiscordBot.Application.Common.Configuration;
-using DiscordBot.Application.WebSearch.Interfaces;
-using Microsoft.Extensions.Options;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Text.Json;
 using System.Web;
+using DiscordBot.Application.Common.Configuration;
+using DiscordBot.Application.WebSearch.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Application.WebSearch.Services;
 
 public sealed class GoogleSearchService(HttpClient httpClient, IOptions<GoogleApiConfig> config) : IWebSearchService
 {
-    private async Task<string> SearchAsync(NameValueCollection queryParameters)
+    private async Task<string> SearchAsync(NameValueCollection queryParameters, CancellationToken cancellationToken = default)
     {
         queryParameters["key"] = config.Value.ApiKey;
         queryParameters["cx"] = config.Value.SearchEngineId;
@@ -21,43 +21,37 @@ public sealed class GoogleSearchService(HttpClient httpClient, IOptions<GoogleAp
             Query = queryParameters.ToString()
         };
 
-        HttpResponseMessage response = await httpClient.GetAsync(uriBuilder.Uri);
+        var response = await httpClient.GetAsync(uriBuilder.Uri, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
-    public async Task<string> SearchAsync(string jsonQuery)
-        => await SearchAsync(ConvertJsonToQuery(jsonQuery) ?? throw new InvalidOperationException("Failed to convert JSON to query parameters."));
+    public async Task<string> SearchAsync(string jsonQuery, CancellationToken cancellationToken = default)
+        => await SearchAsync(ConvertJsonToQuery(jsonQuery) ?? throw new InvalidOperationException("Failed to convert JSON to query parameters."), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<string> SearchAsync(string query, int resultCount, string? location = null, string? language = null, string? hqTerms = null)
+    public async Task<string> SearchAsync(string query, int resultCount, string? countryRestriction = null, string? languageRestriction = null, CancellationToken cancellationToken = default)
     {
         var queryParameters = HttpUtility.ParseQueryString(string.Empty);
         queryParameters["q"] = query;
 
         // Boost search results whose country of origin matches the parameter value.
         // This will only work in conjunction with the language value setting.
-        if (location is string gl)
+        if (countryRestriction is string gl)
         {
             queryParameters["gl"] = gl;
         }
 
         // Restricts the search to documents written in a particular language (e.g., lang_en).
-        if (language is string lr)
+        if (languageRestriction is string lr)
         {
             queryParameters["lr"] = lr;
-        }
-
-        // Appends the specified query terms to the query, as if they were combined with a logical AND operator.
-        if (hqTerms is string hq)
-        {
-            queryParameters["hq"] = hq;
         }
 
         // Number of search results to return. * Valid values are integers between 1 and 10, inclusive.
         queryParameters["num"] = Math.Clamp(resultCount, 1, config.Value.MaxResultCount).ToString();
 
-        return await SearchAsync(queryParameters);
+        return await SearchAsync(queryParameters, cancellationToken);
     }
 
     /// <summary>

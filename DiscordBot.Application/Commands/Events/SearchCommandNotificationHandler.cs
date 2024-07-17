@@ -22,7 +22,7 @@ public class SearchCommandNotificationHandler(ILogger<SearchCommandNotificationH
 
         using (message.Channel.EnterTypingState()) try
             {
-                var response = await mediator.Send(new WebSearchRequest(query, notification.ResultCount), cancellationToken);
+                var response = await mediator.Send(new WebSearchRequest(query, notification.ResultCount, notification.Country), cancellationToken);
 
                 if (response.Items.IsEmpty)
                 {

@@ -49,42 +49,44 @@ public class OpenWeatherMapWeatherResponse : IApiWeatherResponse
     /// </summary>
     /// <param name="openWeatherMapResponse">The OpenWeatherMap response.</param>
     /// <returns>The converted WeatherResponse.</returns>
-    public List<WeatherResponse> ToWeatherResponseList()
+    public WeatherResponse ToWeatherResponse()
     {
-        return [new WeatherResponse
-        {
-            Location = new Models.Location
+        return new(
+            [new()
             {
-                Id = Id,
-                City = Name,
-                Country = Sys?.Country,
-                Longitude = Coord?.Lon ?? 0,
-                Latitude = Coord?.Lat ?? 0,
-                Timezone = Timezone
-            },
-            Title = Weather?.FirstOrDefault()?.Main,
-            Description = Weather?.FirstOrDefault()?.Description,
-            IconUrl = $"https://openweathermap.org/img/wn/{Weather?.FirstOrDefault()?.Icon ?? "01d"}.png",
-            Temperature = new Temperature
-            {
-                Temp = Main?.Temp ?? 0,
-                FeelsLike = Main?.FeelsLike ?? 0,
-                TempMin = Main?.TempMin ?? 0,
-                TempMax = Main?.TempMax ?? 0
-            },
-            Pressure = Main?.Pressure ?? 0,
-            Humidity = Main?.Humidity ?? 0,
-            Visibility = Visibility,
-            Clouds = Clouds?.All ?? 0,
-            DateTime = DateTimeOffset.FromUnixTimeSeconds(Dt).DateTime,
-            Sunrise = Sys?.Sunrise ?? 0,
-            Sunset = Sys?.Sunset ?? 0,
-            Wind = new Models.Wind
-            {
-                Speed = Wind?.Speed ?? 0,
-                Deg = Wind?.Deg ?? 0
-            }
-        }];
+                Location = new Models.Location
+                {
+                    Id = Id,
+                    City = Name,
+                    Country = Sys?.Country,
+                    Longitude = Coord?.Lon ?? 0,
+                    Latitude = Coord?.Lat ?? 0,
+                    Timezone = Timezone
+                },
+                Title = Weather?.FirstOrDefault()?.Main,
+                Description = Weather?.FirstOrDefault()?.Description,
+                IconUrl = $"https://openweathermap.org/img/wn/{Weather?.FirstOrDefault()?.Icon ?? "01d"}.png",
+                Temperature = new Temperature
+                {
+                    Temp = Main?.Temp ?? 0,
+                    FeelsLike = Main?.FeelsLike ?? 0,
+                    TempMin = Main?.TempMin ?? 0,
+                    TempMax = Main?.TempMax ?? 0
+                },
+                Pressure = Main?.Pressure ?? 0,
+                Humidity = Main?.Humidity ?? 0,
+                Visibility = Visibility,
+                Clouds = Clouds?.All ?? 0,
+                DateTime = DateTimeOffset.FromUnixTimeSeconds(Dt).DateTime,
+                Sunrise = Sys?.Sunrise ?? 0,
+                Sunset = Sys?.Sunset ?? 0,
+                Wind = new Models.Wind
+                {
+                    Speed = Wind?.Speed ?? 0,
+                    Deg = Wind?.Deg ?? 0
+                }
+            }]
+        );
     }
 }
 

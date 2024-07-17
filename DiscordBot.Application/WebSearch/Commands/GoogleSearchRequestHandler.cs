@@ -1,15 +1,18 @@
 ﻿using System.Text.Json;
+using DiscordBot.Application.Common.Configuration;
 using DiscordBot.Application.WebSearch.Interfaces;
 using DiscordBot.Domain.WebSearch.Commands;
 using DiscordBot.Domain.WebSearch.Models;
 using DiscordBot.Domain.WebSearch.Models.Google;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Application.WebSearch.Commands;
 
 public class GoogleSearchRequestHandler(ILogger<GoogleSearchRequestHandler> logger,
-                                           IWebSearchService searchService) : IRequestHandler<WebSearchRequest, WebSearchResult?>
+                                           IWebSearchService searchService,
+                                           IOptions<GoogleApiConfig> config) : IRequestHandler<WebSearchRequest, WebSearchResult?>
 {
     public async Task<WebSearchResult?> Handle(WebSearchRequest request, CancellationToken cancellationToken)
     {
@@ -18,7 +21,7 @@ public class GoogleSearchRequestHandler(ILogger<GoogleSearchRequestHandler> logg
 
         logger.LogDebug("Searching using Google for \"{Query}\"", request.Query);
 
-        var results = await searchService.SearchAsync(request.Query, request.ResultCount);
+        var results = await searchService.SearchAsync(request.Query, request.ResultCount ?? config.Value.DefaultResultCount, cancellationToken: cancellationToken);
 
         if (JsonSerializer.Deserialize<GoogleSearchResult>(results) is not GoogleSearchResult searchResult)
             return null;

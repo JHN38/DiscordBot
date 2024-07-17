@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using DiscordBot.Application.Common.Helpers;
 using DiscordBot.Domain.Commands.Events;

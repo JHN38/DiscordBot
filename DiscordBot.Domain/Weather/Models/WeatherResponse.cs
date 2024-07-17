@@ -1,6 +1,8 @@
 ﻿namespace DiscordBot.Domain.Weather.Models;
 
-public record WeatherResponse
+public record WeatherResponse(List<WeatherResponseItem> Items);
+
+public record WeatherResponseItem
 {
     public Location Location { get; init; } = new();
 

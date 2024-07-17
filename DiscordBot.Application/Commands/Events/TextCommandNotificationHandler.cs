@@ -33,6 +33,8 @@ public sealed partial class TextCommandNotificationHandler(ILogger<TextCommandNo
             var location = arg;
 
             await mediator.Publish(new WeatherCommandNotification(message, requestType, location), cancellationToken);
+
+            return;
         }
 
         if (SearchCommandRegex().Match(notification.Command) is { Success: true } searchCommandMatch)
@@ -48,6 +50,8 @@ public sealed partial class TextCommandNotificationHandler(ILogger<TextCommandNo
             };
 
             await mediator.Publish(new SearchCommandNotification(message, arg, resultCount, country), cancellationToken);
+
+            return;
         }
 
         logger.LogWarning("Unknown command: {Command}", notification.Command);

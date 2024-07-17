@@ -2,6 +2,7 @@
 using ChatGptNet;
 using CountryData.Standard;
 using DiscordBot.Application.Common.Configuration;
+using DiscordBot.Application.WebSearch.Commands;
 using DiscordBot.Application.WebSearch.Interfaces;
 using DiscordBot.Application.WebSearch.Services;
 using Microsoft.Extensions.Configuration;
@@ -26,13 +27,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton(new CountryHelper())
             .AddSingleton<IWebSearchService, GoogleSearchService>();
 
-        services.AddHttpClient("OpenWeatherMap", (s, client) =>
-        {
-            var baseAddress = s.GetRequiredService<IOptions<OpenWeatherMapConfig>>().Value.BaseUrl ?? throw new InvalidOperationException("Base URL is not set.");
-
-            client.BaseAddress = new Uri(baseAddress);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-        });
+        services.AddHttpClient<IWebSearchService, GoogleSearchService>(client => client.DefaultRequestHeaders.Add("Accept", "application/json"));
+        services.AddHttpClient<OpenWeatherMapRequestHandler>(client => client.DefaultRequestHeaders.Add("Accept", "application/json"));
 
         return services;
     }

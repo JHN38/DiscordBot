@@ -25,9 +25,9 @@ public class OpenWeatherMapForecastResponse : IApiWeatherResponse
     /// </summary>
     /// <param name="forecastResponse">The OpenWeatherMap forecast response.</param>
     /// <returns>A list of WeatherResponse.</returns>
-    public List<WeatherResponse> ToWeatherResponseList()
+    public WeatherResponse ToWeatherResponse()
     {
-        return List?.Select(forecast => new WeatherResponse
+        return new(List?.Select(forecast => new WeatherResponseItem
         {
             Location = new Location
             {
@@ -60,7 +60,7 @@ public class OpenWeatherMapForecastResponse : IApiWeatherResponse
                 Speed = forecast.Wind?.Speed ?? 0,
                 Deg = forecast.Wind?.Deg ?? 0
             }
-        }).ToList() ?? [];
+        }).ToList() ?? []);
     }
 }
 

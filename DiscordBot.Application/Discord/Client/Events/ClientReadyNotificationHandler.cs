@@ -1,20 +1,17 @@
 ﻿using System.Reflection;
 using Discord.Interactions;
 using Discord.WebSocket;
-using DiscordBot.Application.Common.Configuration;
 using DiscordBot.Domain.Client.Events;
 using DiscordBot.Domain.Commands.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Application.Discord.Client.Events;
 
 public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandler> logger,
     DiscordSocketClient client,
     InteractionService commands,
-    IMediator mediator,
-    IOptions<BotConfig> botOptions) : INotificationHandler<ClientReadyNotification>
+    IMediator mediator) : INotificationHandler<ClientReadyNotification>
 {
     public async Task Handle(ClientReadyNotification notification, CancellationToken cancellationToken)
     {
@@ -34,29 +31,8 @@ public class ClientReadyNotificationHandler(ILogger<ClientReadyNotificationHandl
         commands.Log += async (message) => await mediator.Publish(new CommandLogNotification(message), cancellationToken);
 
         await commands.AddModulesAsync(Assembly.GetExecutingAssembly(), null);
+        await commands.RegisterCommandsGloballyAsync(true);
 
-        if (botOptions.Value.GuildId > 0)
-        {
-            foreach (var module in commands.Modules)
-            {
-                foreach (var command in module.SlashCommands)
-                {
-                    logger.LogDebug("Registering {type} command \"{command}\" from module \"{module}\".", command.CommandType, command.Name, module.Name);
-                }
-                foreach (var command in module.ContextCommands)
-                {
-                    logger.LogDebug("Registering {type} command \"{command}\" from module \"{module}\".", command.CommandType, command.Name, module.Name);
-                }
-            }
-            //#if DEBUG
-            //            await commands.RegisterCommandsToGuildAsync(botOptions.Value.GuildId, true);
-            //#else
-            await commands.RegisterCommandsGloballyAsync(true);
-            //#endif
-        }
-
-        logger.LogInformation("Connected as -> [{currentUser}] :)", client.CurrentUser.Username);
-
-        //await client.SetGameAsync("with your mind");
+        logger.LogInformation("Connected as -> [{CurrentUser}] :)", client.CurrentUser.Username);
     }
 }
