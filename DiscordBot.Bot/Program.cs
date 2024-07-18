@@ -3,10 +3,11 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using DiscordBot.Application;
-using DiscordBot.Application.Common.Configuration;
 using DiscordBot.Application.Common.Helpers;
-using DiscordBot.Bot.Common;
+using DiscordBot.Bot;
 using DiscordBot.Bot.Services;
+using DiscordBot.Infrastructure;
+using DiscordBot.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
@@ -54,6 +55,7 @@ builder.Services.AddSingleton((serviceProvider) =>
 
 // Add the application services
 builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add serilog
 builder.Host.UseSerilog((ctx, config) =>

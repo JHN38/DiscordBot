@@ -24,10 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordBot.Application\DiscordBot.Application.csproj" />
     <ProjectReference Include="..\DiscordBot.Domain\DiscordBot.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
