@@ -373,3 +373,4 @@ aspirate-output/
 aspirate-state.json
 aspirate.json
 manifest.json
+*.db

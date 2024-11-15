@@ -6,7 +6,7 @@ namespace DiscordBot.Domain.Entities;
 /// Represents a collection of search result items.
 /// </summary>
 public record WebSearchResponse(
-    ImmutableList<WebSearchResponseItem> Items);
+    IEnumerable<WebSearchResponseItem> Items);
 
 /// <summary>
 /// Represents a common base model for search result items.

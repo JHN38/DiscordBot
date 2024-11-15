@@ -1,29 +1,24 @@
 ﻿using System.Collections.Immutable;
 using Discord;
-using Discord.WebSocket;
 
 namespace DiscordBot.Application.Common.Helpers;
 
 public static class MessageContentHelper
 {
-    public static async Task<string> MentionsToText(IUserMessage message)
+    /// <summary>
+    /// Strips the bot mention from the start of the content, if present.
+    /// </summary>
+    /// <param name="content">The content string potentially containing the bot mention.</param>
+    /// <param name="user">The user whose mention to strip.</param>
+    /// <returns>
+    /// The content string without the bot mention at the start, or null if the resulting string is null or whitespace.
+    /// </returns>
+    public static string? StripUserMention(string content, IUser user)
     {
-        var msg = message.Content;
-
-        var channel = (IGuildChannel)message.Channel;
-
-        foreach (var mentionedUserId in message.MentionedUserIds)
+        if (content.StartsWith(user.Mention))
         {
-            var user = await channel.GetUserAsync(mentionedUserId);
-            msg = msg.Replace(user.Mention, $"@{user.DisplayName ?? user.GlobalName ?? user.Username}");
+            content = content[user.Mention.Length..].TrimStart();
         }
-
-        return msg;
-    }
-    public static string? StripBotMention(string content)
-    {
-        var span = content.AsSpan();
-        content = span[(span.IndexOf(' ') + 1)..].ToString();
 
         return string.IsNullOrWhiteSpace(content) ? null : content;
     }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Specialized;
 using System.Text.Json;
 using System.Web;
-using DiscordBot.Application.Common.Interfaces;
+using DiscordBot.Application.Interfaces;
 using DiscordBot.Domain.Entities;
 using DiscordBot.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;

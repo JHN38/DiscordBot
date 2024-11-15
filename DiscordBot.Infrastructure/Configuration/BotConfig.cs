@@ -1,7 +1,11 @@
-﻿namespace DiscordBot.Infrastructure.Configuration;
+﻿using DiscordBot.Application.Configurations;
 
-public record BotConfig
+namespace DiscordBot.Infrastructure.Configuration;
+
+public record BotConfig : IBotConfig
 {
+    public List<ulong>? AdminIds { get; init; }
+    public string? TextCommandPrefix { get; init; }
     public bool AlwaysDownloadUsers { get; init; }
     public string? Token { get; init; }
 }

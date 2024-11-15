@@ -1,6 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using DiscordBot.Domain.Events;
+using DiscordBot.Application.Events;
 using DiscordBot.Infrastructure.Configuration;
 using MediatR;
 using Microsoft.Extensions.Options;

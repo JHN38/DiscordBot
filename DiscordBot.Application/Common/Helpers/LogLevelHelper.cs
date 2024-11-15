@@ -79,20 +79,20 @@ public static class LogLevelHelper
         _discordToMicrosoftLogLevelMap.FirstOrDefault(map => map.Value == logLevel).Key;
 
     /// <summary>
-    /// Converts a Microsoft.Extensions.Logging <see cref="LogLevel"/> to a Serilog <see cref="LogEventLevel"/>.
-    /// </summary>
-    /// <param name="logLevel">The Microsoft.Extensions.Logging log level.</param>
-    /// <returns>The corresponding Serilog log event level.</returns>
-    public static LogEventLevel ConvertToSerilog(this LogLevel logLevel) =>
-        _serilogToMicrosoftLogLevelMap.FirstOrDefault(map => map.Value == logLevel).Key;
-
-    /// <summary>
     /// Converts a Serilog <see cref="LogEventLevel"/> to a Discord.Net <see cref="LogSeverity"/>.
     /// </summary>
     /// <param name="logEventLevel">The Serilog log event level.</param>
     /// <returns>The corresponding Discord.Net log severity.</returns>
     public static LogSeverity ConvertToDiscord(this LogEventLevel logEventLevel) =>
         _serilogToDiscordLogLevelMap.FirstOrDefault(map => map.Key == logEventLevel).Value;
+
+    /// <summary>
+    /// Converts a Microsoft.Extensions.Logging <see cref="LogLevel"/> to a Serilog <see cref="LogEventLevel"/>.
+    /// </summary>
+    /// <param name="logLevel">The Microsoft.Extensions.Logging log level.</param>
+    /// <returns>The corresponding Serilog log event level.</returns>
+    public static LogEventLevel ConvertToSerilog(this LogLevel logLevel) =>
+        _serilogToMicrosoftLogLevelMap.FirstOrDefault(map => map.Value == logLevel).Key;
 
     /// <summary>
     /// Converts a Discord.Net <see cref="LogSeverity"/> to a Serilog <see cref="LogEventLevel"/>.

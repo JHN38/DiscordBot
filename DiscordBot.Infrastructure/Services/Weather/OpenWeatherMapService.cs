@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using System.Web;
-using DiscordBot.Application.Common.Interfaces;
+using DiscordBot.Application.Interfaces;
 using DiscordBot.Domain.Entities;
 using DiscordBot.Domain.Enums;
 using DiscordBot.Infrastructure.Configuration;
