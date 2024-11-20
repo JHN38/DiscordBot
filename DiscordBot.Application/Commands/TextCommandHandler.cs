@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using Discord;
+using DiscordBot.Application.Commands.TextCommands;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +21,11 @@ public sealed partial class TextCommandHandler(ILogger<TextCommandHandler> logge
         """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
     private static partial Regex SearchCommandRegex();
 
+    [GeneratedRegex("""
+        ^(?<cmd>msg|m)\s+(?<action>get|g)\s+(?<args>.*)
+        """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex MessageCommandRegex();
+
     public async Task<IUserMessage?> Handle(TextCommand notification, CancellationToken cancellationToken)
     {
         var message = notification.Message;
@@ -31,25 +37,29 @@ public sealed partial class TextCommandHandler(ILogger<TextCommandHandler> logge
             var subCommand = weatherCommandMatch.Groups["subcmd"].Value;
             var arg = weatherCommandMatch.Groups["arg"].Value;
 
-            var requestType = subCommand;
-            var location = arg;
-
-            return await mediator.Send(new WeatherCommand(message, requestType, location), cancellationToken);
+            return await mediator.Send(new WeatherCommand(message, subCommand, arg), cancellationToken);
         }
 
         if (SearchCommandRegex().Match(notification.Command) is { Success: true } searchCommandMatch)
         {
-            var count = searchCommandMatch.Groups["count"].Value;
             var country = searchCommandMatch.Groups["cr"].Value;
             var arg = searchCommandMatch.Groups["arg"].Value;
-
-            var resultCount = count switch
+            var resultCount = searchCommandMatch.Groups["count"].Value switch
             {
                 var s when int.TryParse(s, out var n) => Math.Clamp(n, 1, 9),
                 _ => 1
             };
 
             return await mediator.Send(new WebSearchCommand(message, arg, resultCount, country), cancellationToken);
+        }
+
+        if (MessageCommandRegex().Match(notification.Command) is { Success: true } messageCommandMatch)
+        {
+            var action = messageCommandMatch.Groups["action"].Value;
+            var args = messageCommandMatch.Groups["args"].Value
+                .Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+            return await mediator.Send(new MessageCommand(message, action, args), cancellationToken);
         }
 
         logger.LogWarning("Unknown command: {Command}", notification.Command);

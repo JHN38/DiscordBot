@@ -21,6 +21,9 @@ public static class DiscordEntityExtensions
             Discriminator = user.Discriminator
         };
 
+    public static DiscordChannel ToDiscordChannel(this IChannel channel) =>
+        ToDiscordChannel((IGuildChannel)channel);
+
     /// <summary>
     /// Initializes a DiscordChannel entity from a Discord.Net IChannel instance.
     /// </summary>
@@ -32,7 +35,7 @@ public static class DiscordEntityExtensions
         {
             Id = channel.Id,
             Name = channel.Name,
-            Guild = channel.Guild.ToDiscordGuild()
+            GuildId = channel.Guild.Id
         };
 
     /// <summary>
@@ -51,10 +54,8 @@ public static class DiscordEntityExtensions
     /// Initializes a DiscordMessage entity from a Discord.Net IMessage instance.
     /// </summary>
     /// <param name="message">The Discord.Net IMessage instance.</param>
-    /// <param name="channel">The associated DiscordChannel entity.</param>
-    /// <param name="author">The associated DiscordUser entity representing the message author.</param>
     /// <returns>A new DiscordMessage entity with required properties set.</returns>
-    public static DiscordMessage ToDiscordMessage(this IMessage message, DiscordChannel channel, DiscordUser author) =>
+    public static DiscordMessage ToDiscordMessage(this IMessage message) =>
         new()
         {
             Id = message.Id,
@@ -62,7 +63,7 @@ public static class DiscordEntityExtensions
             Timestamp = message.Timestamp,
             IsEdited = message.EditedTimestamp.HasValue,
             EditedTimestamp = message.EditedTimestamp,
-            Channel = channel,
-            Author = author
+            ChannelId = message.Channel.Id,
+            AuthorId = message.Author.Id
         };
 }

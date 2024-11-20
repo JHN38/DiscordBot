@@ -1,3 +1,3 @@
 ﻿namespace DiscordBot.Domain.Common;
 
-public class DiscordEntity : BaseAuditableEntity<ulong>;
+public class DiscordEntity : AuditableEntityBase<ulong>;

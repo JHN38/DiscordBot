@@ -18,7 +18,7 @@ public class DiscordMessage : DiscordEntity
     /// <summary>
     /// Gets or sets the user who authored the message.
     /// </summary>
-    public required DiscordUser Author { get; set; }
+    public DiscordUser Author { get; set; } = null!;
 
     // Foreign Key for Channel
     public ulong ChannelId { get; set; }
@@ -26,5 +26,5 @@ public class DiscordMessage : DiscordEntity
     /// <summary>
     /// Gets or sets the channel in which the message was sent.
     /// </summary>
-    public required DiscordChannel Channel { get; set; }
+    public DiscordChannel Channel { get; set; } = null!;
 }

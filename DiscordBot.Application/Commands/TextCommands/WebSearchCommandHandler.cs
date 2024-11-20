@@ -4,7 +4,7 @@ using DiscordBot.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Commands;
+namespace DiscordBot.Application.Commands.TextCommands;
 
 public record WebSearchCommand(IUserMessage Message, string Query, int ResultCount = 1, string? Country = null) : IRequest<IUserMessage>;
 

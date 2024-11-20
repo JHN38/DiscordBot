@@ -1,15 +1,16 @@
 ﻿using DiscordBot.Application.Common.Interfaces;
 using DiscordBot.Application.Configurations;
+using DiscordBot.Application.Discord.Messages;
 using DiscordBot.Application.Interfaces;
 using DiscordBot.Infrastructure.Configuration;
 using DiscordBot.Infrastructure.Data;
 using DiscordBot.Infrastructure.Data.Interceptors;
+using DiscordBot.Infrastructure.Data.Repositories;
 using DiscordBot.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Infrastructure;
@@ -41,16 +42,17 @@ public static class DependencyInjection
         services.AddTransient<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
         // Inside the AddInfrastructure method
-        services.AddDbContext<AppDbContext>((s, options) =>
+        services.AddDbContext<AppDbContext>((s, optionsBuilder) =>
         {
-            options.UseSqlite(connectionString); // This line will now work correctly
-            options.EnableSensitiveDataLogging();
-            options.UseLoggerFactory(s.GetRequiredService<ILoggerFactory>());
-            options.AddInterceptors(s.GetServices<ISaveChangesInterceptor>());
-        }, ServiceLifetime.Transient, ServiceLifetime.Transient); // TODO: Change back to Transient when done testing.
+            optionsBuilder.UseSqlite(connectionString);
+            optionsBuilder.EnableSensitiveDataLogging();
+            optionsBuilder.AddInterceptors(s.GetServices<ISaveChangesInterceptor>());
+        });
 
-        services.AddTransient<IAppDbContext>(s => s.GetRequiredService<AppDbContext>());
-        services.AddTransient(typeof(IRepository<>), typeof(RepositoryBase<>));
+        services.AddScoped<IAppDbContext>(s => s.GetRequiredService<AppDbContext>());
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
+        services.AddScoped<IDiscordMessageRepository, DiscordMessageRepository>();
 
         services.AddSingleton(TimeProvider.System);
 

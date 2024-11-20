@@ -17,11 +17,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
+    <PackageReference Include="System.Linq.Async.Queryable" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DiscordBot.Application\DiscordBot.Application.csproj" />
-    <ProjectReference Include="..\DiscordBot.Domain\DiscordBot.Domain.csproj" />
   </ItemGroup>
 
 </Project>

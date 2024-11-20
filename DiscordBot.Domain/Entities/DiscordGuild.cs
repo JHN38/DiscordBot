@@ -17,5 +17,5 @@ public class DiscordGuild : DiscordEntity
     /// <summary>
     /// Navigation property for users within this guild.
     /// </summary>
-    public ICollection<DiscordUser> Users { get; set; } = [];
+    public ICollection<DiscordGuildUser> DiscordGuildUsers { get; set; } = [];
 }

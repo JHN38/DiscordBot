@@ -6,7 +6,7 @@ namespace DiscordBot.Domain.Common;
 /// Represents a base auditable entity with common properties for tracking creation and modification.
 /// </summary>
 /// <typeparam name="TId">The type of the entity's identifier.</typeparam>
-public abstract class BaseAuditableEntity<TId> : BaseEntity<TId>, IAuditableEntity
+public abstract class AuditableEntityBase<TId> : EntityBase<TId>, IAuditableEntity
     where TId : struct
 {
     /// <summary>

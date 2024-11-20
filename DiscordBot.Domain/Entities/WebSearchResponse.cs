@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace DiscordBot.Domain.Entities;
+﻿namespace DiscordBot.Domain.Entities;
 
 /// <summary>
 /// Represents a collection of search result items.

@@ -25,5 +25,5 @@ public class DiscordChannel : DiscordEntity
     /// <summary>
     /// Navigation property for users within this channel.
     /// </summary>
-    public ICollection<DiscordUser> Users { get; set; } = [];
+    public ICollection<DiscordChannelUser> DiscordChannelUsers { get; set; } = [];
 }

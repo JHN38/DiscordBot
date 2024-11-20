@@ -9,7 +9,7 @@ public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(AssemblyReference.Assembly));
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(AssemblyReference.Assembly).Lifetime = ServiceLifetime.Scoped);
         services.AddAutoMapper(AssemblyReference.Assembly);
 
         services.AddChatGpt(configuration);

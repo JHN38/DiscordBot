@@ -8,7 +8,7 @@ using DiscordBot.Domain.Enums;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace DiscordBot.Application.Commands;
+namespace DiscordBot.Application.Commands.TextCommands;
 
 public record WeatherCommand(IUserMessage Message, string WeatherRequestType, string Location, string? Units = "metric") : IRequest<IUserMessage>;
 

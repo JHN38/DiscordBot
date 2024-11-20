@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using Discord;
 using Discord.Interactions;
@@ -53,6 +52,7 @@ builder.Services.AddSingleton((serviceProvider) =>
         };
     })
     .AddSingleton<DiscordSocketClient>()
+    .AddSingleton<IDiscordClient>(s => s.GetRequiredService<DiscordSocketClient>())
     .AddSingleton(s => new InteractionService(s.GetRequiredService<DiscordSocketClient>()))
     .AddHostedService<Worker>();
 
@@ -77,7 +77,8 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 
-    var dbContext = app.Services.GetRequiredService<AppDbContext>();
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.OpenConnectionAsync(); // Open the connection to the in-memory database
     await dbContext.Database.EnsureCreatedAsync();  // Ensure the database is created
 }
