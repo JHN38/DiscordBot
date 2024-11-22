@@ -5,12 +5,14 @@ using DiscordBot.Application.Interfaces;
 using DiscordBot.Infrastructure.Configuration;
 using DiscordBot.Infrastructure.Data;
 using DiscordBot.Infrastructure.Data.Interceptors;
+using DiscordBot.Infrastructure.Data.Migrations;
 using DiscordBot.Infrastructure.Data.Repositories;
 using DiscordBot.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DiscordBot.Infrastructure;
@@ -37,15 +39,19 @@ public static class DependencyInjection
         services.Configure<BotConfig>(configuration.GetSection("Bot"));
         services.AddSingleton<IBotConfig>(s => s.GetRequiredService<IOptions<BotConfig>>().Value);
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
-
         services.AddTransient<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
         // Inside the AddInfrastructure method
         services.AddDbContext<AppDbContext>((s, optionsBuilder) =>
         {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
             optionsBuilder.UseSqlite(connectionString);
+
+            optionsBuilder.UseModel(AppDbContextModel.Instance);
             optionsBuilder.EnableSensitiveDataLogging();
+            optionsBuilder.EnableDetailedErrors();
+            optionsBuilder.UseLoggerFactory(s.GetRequiredService<ILoggerFactory>());
+            optionsBuilder.UseLazyLoadingProxies();
             optionsBuilder.AddInterceptors(s.GetServices<ISaveChangesInterceptor>());
         });
 

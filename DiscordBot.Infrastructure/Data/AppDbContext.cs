@@ -42,20 +42,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                   .WithOne(e => e.Guild)
                   .HasForeignKey(e => e.GuildId)
                   .OnDelete(DeleteBehavior.Cascade);
-        });
 
-        // DiscordGuildUser Entity Configurations
-        modelBuilder.Entity<DiscordGuildUser>(entity =>
-        {
-            entity.HasKey(dgu => new { dgu.DiscordGuildId, dgu.UserId });
+            // Many-to-Many Relationship: Guild has many Users
+            entity.HasMany(e => e.Users)
+                  .WithMany(e => e.Guilds)
+                  .UsingEntity(j => j.ToTable("DiscordGuildUsers"));
 
-            entity.HasOne(dgu => dgu.DiscordGuild)
-                .WithMany(dg => dg.DiscordGuildUsers)
-                .HasForeignKey(dgu => dgu.DiscordGuildId);
-
-            entity.HasOne(dgu => dgu.User)
-                .WithMany(du => du.DiscordGuildUsers)
-                .HasForeignKey(dgu => dgu.UserId);
+            // One-to-Many Relationship: Guild has many Messages
+            entity.HasMany(e => e.Messages)
+                  .WithOne(e => e.Guild)
+                  .HasForeignKey(e => e.GuildId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         // DiscordChannel Entity Configurations
@@ -75,20 +72,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                   .WithOne(e => e.Channel)
                   .HasForeignKey(e => e.ChannelId)
                   .OnDelete(DeleteBehavior.Cascade);
-        });
 
-        // DiscordChannelUser Entity Configurations
-        modelBuilder.Entity<DiscordChannelUser>(entity =>
-        {
-            entity.HasKey(dcu => new { dcu.DiscordChannelId, dcu.UserId });
-
-            entity.HasOne(dcu => dcu.DiscordChannel)
-                .WithMany(dc => dc.DiscordChannelUsers)
-                .HasForeignKey(dcu => dcu.DiscordChannelId);
-
-            entity.HasOne(dcu => dcu.User)
-                .WithMany(du => du.DiscordChannelUsers)
-                .HasForeignKey(dcu => dcu.UserId);
+            // Many-to-Many Relationship: Channel has many Users
+            entity.HasMany(e => e.Users)
+                  .WithMany(e => e.Channels)
+                  .UsingEntity(j => j.ToTable("DiscordChannelUsers"));
         });
 
         // DiscordUser Entity Configurations
@@ -106,6 +94,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                   .WithOne(e => e.Author)
                   .HasForeignKey(e => e.AuthorId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // Many-to-Many Relationship: User belongs to many Channels
+            entity.HasMany(e => e.Channels)
+                  .WithMany(e => e.Users)
+                  .UsingEntity(j => j.ToTable("DiscordUserChannels"));
+
+            // Many-to-Many Relationship: User belongs to many Guilds
+            entity.HasMany(e => e.Guilds)
+                  .WithMany(e => e.Users)
+                  .UsingEntity(j => j.ToTable("DiscordUserGuilds"));
         });
 
         // DiscordMessage Entity Configurations
@@ -127,6 +125,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                   .WithMany(e => e.Messages)
                   .HasForeignKey(e => e.AuthorId)
                   .OnDelete(DeleteBehavior.Restrict);
+
+            // One-to-Many Relationship: Message belongs to a Guild
+            entity.HasOne(e => e.Guild)
+                  .WithMany(e => e.Messages)
+                  .HasForeignKey(e => e.GuildId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

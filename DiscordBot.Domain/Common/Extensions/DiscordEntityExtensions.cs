@@ -64,6 +64,7 @@ public static class DiscordEntityExtensions
             IsEdited = message.EditedTimestamp.HasValue,
             EditedTimestamp = message.EditedTimestamp,
             ChannelId = message.Channel.Id,
-            AuthorId = message.Author.Id
+            AuthorId = message.Author.Id,
+            GuildId = ((IGuildChannel)message.Channel).Guild.Id
         };
 }

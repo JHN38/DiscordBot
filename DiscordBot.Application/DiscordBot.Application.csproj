@@ -9,13 +9,13 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="ChatGptNet" Version="3.3.9" />
-    <PackageReference Include="CountryData.Standard" Version="1.4.1" />
+    <PackageReference Include="CountryData.Standard" Version="1.5.0" />
     <PackageReference Include="Discord.Net" Version="3.16.0" />
     <PackageReference Include="Discord.Net.Interactions" Version="3.16.0" />
     <PackageReference Include="Google.Apis.CustomSearchAPI.v1" Version="1.68.0.3520" />
     <PackageReference Include="MediatR" Version="12.4.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
     <PackageReference Include="NodaTime" Version="3.2.0" />
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">

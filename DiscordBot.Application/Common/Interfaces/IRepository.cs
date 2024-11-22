@@ -22,7 +22,7 @@ public interface IRepositoryBase<TEntity> : IDbContext
     /// <param name="entity">The entity to add.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates an existing entity in the repository asynchronously.
@@ -30,7 +30,7 @@ public interface IRepositoryBase<TEntity> : IDbContext
     /// <param name="entity">The entity to update.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task<TEntity> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes an existing entity from the repository asynchronously.
@@ -38,7 +38,7 @@ public interface IRepositoryBase<TEntity> : IDbContext
     /// <param name="entity">The entity to delete.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
+    Task<TEntity> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

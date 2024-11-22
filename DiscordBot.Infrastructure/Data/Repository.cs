@@ -27,16 +27,16 @@ public abstract class RepositoryBase<TEntity>(AppDbContext context) : IRepositor
         await _dbSet.ToListAsync(cancellationToken);
 
     /// <inheritdoc />
-    public Task AddAsync(TEntity entity, CancellationToken cancellationToken = default) =>
-        Task.Run(() => _dbSet.Add(entity), cancellationToken);
+    public Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_dbSet.Add(entity).Entity);
 
     /// <inheritdoc />
-    public Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default) =>
-        Task.Run(() => _dbSet.Update(entity), cancellationToken);
+    public Task<TEntity> UpdateAsync(TEntity entity, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_dbSet.Update(entity).Entity);
 
     /// <inheritdoc />
-    public Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default) =>
-        Task.Run(() => _dbSet.Remove(entity), cancellationToken);
+    public Task<TEntity> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_dbSet.Remove(entity).Entity);
 
     /// <inheritdoc />
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
@@ -60,7 +60,7 @@ public class Repository<TEntity>(AppDbContext context) : RepositoryBase<TEntity>
     /// <inheritdoc />
     public async Task<TEntity> GetOrCreateEntityAsync<TId>(TId id, Func<TEntity> createEntity,
         CancellationToken cancellationToken = default) where TId : struct =>
-        await GetByIdAsync(id, cancellationToken) ?? createEntity();
+        await GetByIdAsync(id, cancellationToken) ?? await AddAsync(createEntity(), cancellationToken);
 
     /// <inheritdoc />
     public async Task AddIfNewAsync<TId>(TId id, TEntity entity, CancellationToken cancellationToken = default)

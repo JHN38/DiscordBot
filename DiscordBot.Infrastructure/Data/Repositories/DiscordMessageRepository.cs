@@ -22,44 +22,31 @@ public class DiscordMessageRepository(AppDbContext context,
 
     public async Task AddWithDependenciesAsync(IMessage message, IChannel channel, IGuild guild, IUser author, CancellationToken cancellationToken = default)
     {
-        var discordMessage = message.ToDiscordMessage();
-
         // Start a transaction
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            // Try to insert the message
+            var guildEntity = await _guildRepository.GetOrCreateEntityAsync(guild.Id, guild.ToDiscordGuild, cancellationToken);
+            var userEntity = await _userRepository.GetOrCreateEntityAsync(author.Id, author.ToDiscordUser, cancellationToken);
+            var channelEntity = await _channelRepository.GetOrCreateEntityAsync(channel.Id, channel.ToDiscordChannel, cancellationToken);
+
+            if (!guildEntity.Users.Contains(userEntity))
+            {
+                guildEntity.Users.Add(userEntity);
+            }
+
+            if (!channelEntity.Users.Contains(userEntity))
+            {
+                channelEntity.Users.Add(userEntity);
+            }
+
+            await SaveChangesAsync(cancellationToken);
+
+            var discordMessage = message.ToDiscordMessage();
             await AddAsync(discordMessage, cancellationToken);
             await SaveChangesAsync(cancellationToken);
 
-            // Commit transaction
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.IsForeignKeyViolation())
-        {
-            // Clear the changes to start over if a dependency was missing
-            _context.ChangeTracker.Clear();
-
-            // Save entities in order respecting foreign keys
-            var discordGuild = await _guildRepository.GetOrCreateEntityAsync(guild.Id, guild.ToDiscordGuild, cancellationToken);
-            await _guildRepository.AddIfNewAsync(discordGuild.Id, discordGuild, cancellationToken);
-            await SaveChangesAsync(cancellationToken);
-
-            var discordChannel = await _channelRepository.GetOrCreateEntityAsync(channel.Id, channel.ToDiscordChannel, cancellationToken);
-            await _channelRepository.AddIfNewAsync(discordChannel.Id, discordChannel, cancellationToken);
-            await SaveChangesAsync(cancellationToken);
-
-            // Most likely the user was missing
-            var discordUser = await _userRepository.GetOrCreateEntityAsync(author.Id, author.ToDiscordUser, cancellationToken);
-            await _userRepository.AddIfNewAsync(author.Id, discordUser, cancellationToken);
-            await SaveChangesAsync(cancellationToken);
-
-            // Everything should have been created now
-            await AddAsync(discordMessage, cancellationToken);
-            await SaveChangesAsync(cancellationToken);
-
-            // Commit transaction
             await transaction.CommitAsync(cancellationToken);
         }
         catch
@@ -110,15 +97,25 @@ public class DiscordMessageRepository(AppDbContext context,
             $"{m.Timestamp.ToString("M/dd/yyyy h:mm tt", CultureInfo.InvariantCulture)} **{m.Username}** {m.Content}");
     }
 
+    /// <summary>
+    /// Retrieves Discord messages containing the specified term with their associated channels populated.
+    /// </summary>
+    /// <param name="needle">The term to search for in the message content.</param>
+    /// <param name="cancellationToken">Token for cancelling the operation.</param>
+    /// <returns>A collection of DiscordMessage entities with their associated channels populated.</returns>
     public async Task<IEnumerable<DiscordMessage>> GetMatchingMessagesAsync(string needle, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        if (string.IsNullOrWhiteSpace(needle))
+        {
+            throw new ArgumentException("Search term must not be null or empty", nameof(needle));
+        }
+
+        var messages = await _dbSet
             .Where(m => EF.Functions.Like(m.Content, $"%{needle}%"))
-            .Join(_context.Users,                      // Second table to join (Users)
-                  m => m.AuthorId,                     // Foreign key in Messages (AuthorId)
-                  u => u.Id,                           // Primary key in Users (Id)
-                  (m, u) => m)
-            .OrderByDescending(m => m.Timestamp)        // Order by Timestamp descending
+            .Include(m => m.Channel)
+            .Include(m => m.Author)
             .ToListAsync(cancellationToken);
+
+        return messages;
     }
 }

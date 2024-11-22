@@ -31,12 +31,7 @@ public class Worker : IHostedService
     {
         try
         {
-            _client.Log += async (message) => await _mediator.Publish(new ClientLogNotification(message), cancellationToken);
-            _client.MessageReceived += async (message) => await _mediator.Publish(new ClientMessageReceivedNotification(message), cancellationToken);
             _client.Ready += async () => await _mediator.Publish(new ClientReadyNotification(), cancellationToken);
-            _client.PresenceUpdated += async (user, oldPresence, newPresence) => await _mediator.Publish(new GuildPresenceUpdateNotification(user, oldPresence, newPresence), cancellationToken);
-            _client.GuildScheduledEventCreated += async (guildEvent) => await _mediator.Publish(new GuildScheduledEventNotification(guildEvent), cancellationToken);
-            _client.InviteCreated += async (invite) => await _mediator.Publish(new GuildInviteCreatedNotification(invite), cancellationToken);
 
             // process the InteractionCreated payloads to execute Interactions commands
             _client.InteractionCreated += async (socketInteration) => await _mediator.Publish(new ClientInteractionCreatedNotification(socketInteration), cancellationToken);

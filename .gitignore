@@ -374,3 +374,4 @@ aspirate-state.json
 aspirate.json
 manifest.json
 *.db
+*.db-*

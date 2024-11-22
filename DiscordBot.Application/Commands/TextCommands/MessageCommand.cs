@@ -1,7 +1,8 @@
-﻿using System.Globalization;
-using System.Linq;
+﻿using System;
+using System.Globalization;
 using Discord;
 using DiscordBot.Application.Discord.Messages;
+using DiscordBot.Application.Interfaces;
 using DiscordBot.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -10,25 +11,25 @@ namespace DiscordBot.Application.Commands.TextCommands;
 
 public record MessageCommand(IUserMessage Message, string Action, IEnumerable<string>? Args = null) : IRequest<IUserMessage>;
 
-public class MessageCommandHandler(ILogger<MessageCommandHandler> logger, IDiscordClient client,
+public class MessageCommandHandler(ILogger<MessageCommandHandler> logger,
+    IDiscordUserDisplayNameResolver displayNameResolver,
     IDiscordMessageRepository messageRepository) : IRequestHandler<MessageCommand, IUserMessage>
 {
     private IUserMessage? _message = null!;
-    private IMessageChannel? _channel = null!;
     private IGuild? _guild = null!;
-    private readonly IDiscordClient _client = client;
+    private readonly IDiscordUserDisplayNameResolver _displayNameResolver = displayNameResolver;
 
     public async Task<IUserMessage> Handle(MessageCommand notification, CancellationToken cancellationToken)
     {
         _message = notification.Message;
-        _channel = _message.Channel;
-        _guild = ((IGuildChannel)_channel).Guild;
+        var channel = _message.Channel;
+        _guild = ((IGuildChannel)channel).Guild;
 
         var action = notification.Action;
         var args = notification.Args;
 
         // Start typing...
-        using var typingState = _channel.EnterTypingState();
+        using var typingState = channel.EnterTypingState();
 
         try
         {
@@ -65,12 +66,26 @@ public class MessageCommandHandler(ILogger<MessageCommandHandler> logger, IDisco
                 options: new() { CancelToken = cancellationToken });
 
         var matchingMessages = await messageRepository.GetMatchingMessagesAsync(needle, cancellationToken);
-        // Get all the matching messages and convert to Dictionary<ulong, IUser>
-        var authorDisplayNames = await ResolveDisplayNamesAcrossGuildsAsync(matchingMessages.Select(m => m.AuthorId));
 
-        var reply = string.Join("\n", matchingMessages.Select(m =>
-            $"{m.Timestamp.ToString("M/dd/yyyy h:mm tt", CultureInfo.InvariantCulture)} **{authorDisplayNames[m.AuthorId]}** {m.Content}"));
-        return await _message.ReplyAsync(reply,
+        if (!matchingMessages?.Any() ?? true)
+        {
+            return await _message.ReplyAsync("No matching message(s) found.",
+                options: new() { CancelToken = cancellationToken });
+        }
+
+        var guildUserPairs = matchingMessages!
+                .Select(m => new DiscordGuildUserPair(m.GuildId, m.AuthorId));
+
+        var authorDisplayNames = await _displayNameResolver.ResolveDisplayNamesAsync(guildUserPairs, _guild!.Id, cancellationToken);
+
+        var formattedMessages = matchingMessages!
+            .Join(guildUserPairs,
+                m => m.AuthorId,
+                p => p.UserId,
+                (m, p) => 
+                    $"{m.Timestamp.ToString("M/dd/yyyy h:mm tt", CultureInfo.InvariantCulture)} **{authorDisplayNames[p]}** {m.Content}");
+
+        return await _message.ReplyAsync(string.Join("\n", formattedMessages),
             options: new() { CancelToken = cancellationToken });
     }
 
@@ -93,39 +108,6 @@ public class MessageCommandHandler(ILogger<MessageCommandHandler> logger, IDisco
         return await _message.ReplyAsync(reply,
             options: new() { CancelToken = cancellationToken });
     }
-
-    // TODO: this should resolve the displayName on the Guild where the message was sent, if possible.
-    // or maybe on the guild where the request was made. TBD
-    public async Task<Dictionary<ulong, string>> ResolveDisplayNamesAcrossGuildsAsync(IEnumerable<ulong> userIds)
-    {
-        var displayNames = new Dictionary<ulong, string>();
-
-        // Iterate through each guild the bot is a member of
-        var guilds = await _client.GetGuildsAsync();
-
-        foreach (var guild in guilds)
-        {
-            // Retrieve all users in the current guild
-            var guildUsers = await guild.GetUsersAsync();
-            var guildUserDict = guildUsers.ToDictionary(user => user.Id, user => user.DisplayName ?? user.GlobalName ?? user.Username);
-
-            // Loop through the provided user IDs and try to fill in display names if they haven't been resolved yet
-            foreach (var userId in userIds.Where(userId => !displayNames.ContainsKey(userId)))
-            {
-                if (guildUserDict.TryGetValue(userId, out var displayName))
-                {
-                    displayNames[userId] = displayName;
-                }
-            }
-
-            // If all user IDs are resolved, break out of the loop
-            if (displayNames.Count == userIds.Count())
-            {
-                break;
-            }
-        }
-
-        return displayNames;
-    }
 }
+
 

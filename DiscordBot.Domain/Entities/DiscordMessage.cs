@@ -12,19 +12,12 @@ public class DiscordMessage : DiscordEntity
     public bool IsEdited { get; set; }
     public DateTimeOffset? EditedTimestamp { get; set; } = null!;
 
-    // Foreign Key for Author (User)
+    public ulong GuildId { get; set; }
+    public virtual DiscordGuild Guild { get; set; } = null!;
+
     public ulong AuthorId { get; set; }
+    public virtual DiscordUser Author { get; set; } = null!;
 
-    /// <summary>
-    /// Gets or sets the user who authored the message.
-    /// </summary>
-    public DiscordUser Author { get; set; } = null!;
-
-    // Foreign Key for Channel
     public ulong ChannelId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the channel in which the message was sent.
-    /// </summary>
-    public DiscordChannel Channel { get; set; } = null!;
+    public virtual DiscordChannel Channel { get; set; } = null!;
 }

@@ -8,8 +8,6 @@ using DiscordBot.Bot;
 using DiscordBot.Bot.Services;
 using DiscordBot.Infrastructure;
 using DiscordBot.Infrastructure.Configuration;
-using DiscordBot.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
@@ -76,11 +74,6 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.OpenConnectionAsync(); // Open the connection to the in-memory database
-    await dbContext.Database.EnsureCreatedAsync();  // Ensure the database is created
 }
 
 app.UseSerilogRequestLogging();

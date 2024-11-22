@@ -9,13 +9,7 @@ public class DiscordGuild : DiscordEntity
 {
     public required string Name { get; set; }
 
-    /// <summary>
-    /// Navigation property for channels within this guild.
-    /// </summary>
-    public ICollection<DiscordChannel> Channels { get; set; } = [];
-
-    /// <summary>
-    /// Navigation property for users within this guild.
-    /// </summary>
-    public ICollection<DiscordGuildUser> DiscordGuildUsers { get; set; } = [];
+    public virtual ICollection<DiscordChannel> Channels { get; set; } = [];
+    public virtual ICollection<DiscordUser> Users { get; set; } = [];
+    public virtual ICollection<DiscordMessage> Messages { get; set; } = [];
 }
