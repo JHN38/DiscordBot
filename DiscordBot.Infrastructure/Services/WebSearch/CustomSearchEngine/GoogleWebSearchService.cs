@@ -6,7 +6,7 @@ using DiscordBot.Domain.Entities;
 using DiscordBot.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace DiscordBot.Infrastructure.Services;
+namespace DiscordBot.Infrastructure.Services.WebSearch.CustomSearchEngine;
 
 public sealed class GoogleWebSearchService(HttpClient httpClient, IOptions<GoogleApiConfig> config) : IWebSearchService
 {
@@ -29,7 +29,7 @@ public sealed class GoogleWebSearchService(HttpClient httpClient, IOptions<Googl
         if (await response.Content.ReadAsStringAsync(cancellationToken) is not string results)
             return null;
 
-        if (JsonSerializer.Deserialize<GoogleWebSearchResponseDto>(results) is not GoogleWebSearchResponseDto searchResult)
+        if (JsonSerializer.Deserialize<GoogleWebSearchResponse>(results) is not GoogleWebSearchResponse searchResult)
             return null;
 
         return searchResult.ToWebSearchResult();
@@ -94,5 +94,10 @@ public sealed class GoogleWebSearchService(HttpClient httpClient, IOptions<Googl
         }
 
         return nameValueCollection;
+    }
+
+    public Task<string> SearchImageAsync(IDictionary<string, string> queryParams)
+    {
+        throw new NotImplementedException();
     }
 }

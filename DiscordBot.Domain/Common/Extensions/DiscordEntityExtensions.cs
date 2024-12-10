@@ -65,6 +65,7 @@ public static class DiscordEntityExtensions
             EditedTimestamp = message.EditedTimestamp,
             ChannelId = message.Channel.Id,
             AuthorId = message.Author.Id,
+            ReferencedMessageId = message.Reference?.MessageId.ToNullable(),
             GuildId = ((IGuildChannel)message.Channel).Guild.Id
         };
 }

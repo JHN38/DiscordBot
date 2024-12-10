@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using Discord;
 using DiscordBot.Application.Discord.Messages;
 using DiscordBot.Application.Interfaces;
@@ -13,11 +12,13 @@ public record MessageCommand(IUserMessage Message, string Action, IEnumerable<st
 
 public class MessageCommandHandler(ILogger<MessageCommandHandler> logger,
     IDiscordUserDisplayNameResolver displayNameResolver,
+    IChatService chatService,
     IDiscordMessageRepository messageRepository) : IRequestHandler<MessageCommand, IUserMessage>
 {
     private IUserMessage? _message = null!;
     private IGuild? _guild = null!;
     private readonly IDiscordUserDisplayNameResolver _displayNameResolver = displayNameResolver;
+    private readonly IChatService _chatService = chatService;
 
     public async Task<IUserMessage> Handle(MessageCommand notification, CancellationToken cancellationToken)
     {
@@ -37,6 +38,7 @@ public class MessageCommandHandler(ILogger<MessageCommandHandler> logger,
             {
                 case "g":
                 case "get": return await GetMessagesAsync(args, cancellationToken);
+                case "ask": return await AskMessagesAsync(args, cancellationToken);
                 default:
                     logger.LogWarning("Unknown subcommand: {Action}", action);
                     return await _message.ReplyAsync($"Unknown subcommand: {action}", options: new() { CancelToken = cancellationToken });
@@ -47,6 +49,17 @@ public class MessageCommandHandler(ILogger<MessageCommandHandler> logger,
             logger.LogError(ex, "An error occurred while processing the message command {Action}.", action);
             return await _message.ReplyAsync("Sorry, I couldn't process your request at the moment.", options: new() { CancelToken = cancellationToken });
         }
+    }
+
+    private async Task<IUserMessage> AskMessagesAsync(IEnumerable<string>? query, CancellationToken cancellationToken)
+    {
+        if (!query?.Any() ?? true)
+            return await _message.ReplyAsync("No search query given.",
+                options: new() { CancelToken = cancellationToken });
+
+        var response = await _chatService.ProcessMessageAsync(_message!, string.Join(" ", query!), cancellationToken);
+        return await _message.ReplyAsync(response,
+            options: new() { CancelToken = cancellationToken });
     }
 
     private async Task<IUserMessage> GetMessagesAsync(IEnumerable<string>? args, CancellationToken cancellationToken = default) =>
@@ -82,7 +95,7 @@ public class MessageCommandHandler(ILogger<MessageCommandHandler> logger,
             .Join(guildUserPairs,
                 m => m.AuthorId,
                 p => p.UserId,
-                (m, p) => 
+                (m, p) =>
                     $"{m.Timestamp.ToString("M/dd/yyyy h:mm tt", CultureInfo.InvariantCulture)} **{authorDisplayNames[p]}** {m.Content}");
 
         return await _message.ReplyAsync(string.Join("\n", formattedMessages),

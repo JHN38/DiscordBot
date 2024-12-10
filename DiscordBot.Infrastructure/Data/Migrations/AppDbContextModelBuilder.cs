@@ -11,7 +11,7 @@ namespace DiscordBot.Infrastructure.Data.Migrations
     public partial class AppDbContextModel
     {
         private AppDbContextModel()
-            : base(skipDetectChanges: false, modelId: new Guid("4d0262bf-cecd-42dd-bbb0-2370ac0fa2d9"), entityTypeCount: 6)
+            : base(skipDetectChanges: false, modelId: new Guid("13fb5084-b370-48b5-8d57-2f6876d50472"), entityTypeCount: 6)
         {
         }
 
@@ -28,6 +28,7 @@ namespace DiscordBot.Infrastructure.Data.Migrations
             DiscordMessageEntityType.CreateForeignKey1(discordMessage, discordUser);
             DiscordMessageEntityType.CreateForeignKey2(discordMessage, discordChannel);
             DiscordMessageEntityType.CreateForeignKey3(discordMessage, discordGuild);
+            DiscordMessageEntityType.CreateForeignKey4(discordMessage, discordMessage);
             DiscordChannelDiscordUserEntityType.CreateForeignKey1(discordChannelDiscordUser, discordChannel);
             DiscordChannelDiscordUserEntityType.CreateForeignKey2(discordChannelDiscordUser, discordUser);
             DiscordGuildDiscordUserEntityType.CreateForeignKey1(discordGuildDiscordUser, discordGuild);

@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using Discord;
+﻿using Discord;
 using DiscordBot.Application.Interfaces;
 using DiscordBot.Domain.Entities;
 

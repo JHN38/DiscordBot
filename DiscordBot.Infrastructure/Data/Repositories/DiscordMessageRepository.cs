@@ -1,11 +1,9 @@
 ﻿using System.Globalization;
-using System.Threading;
 using Discord;
 using DiscordBot.Application.Common.Interfaces;
 using DiscordBot.Application.Discord.Messages;
 using DiscordBot.Domain.Common.Extensions;
 using DiscordBot.Domain.Entities;
-using DiscordBot.Infrastructure.Common.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace DiscordBot.Infrastructure.Data.Repositories;
@@ -20,7 +18,7 @@ public class DiscordMessageRepository(AppDbContext context,
     private readonly IRepository<DiscordChannel> _channelRepository = channelRepository;
     private readonly IRepository<DiscordUser> _userRepository = userRepository;
 
-    public async Task AddWithDependenciesAsync(IMessage message, IChannel channel, IGuild guild, IUser author, CancellationToken cancellationToken = default)
+    public async Task<DiscordMessage> AddWithDependenciesAsync(IMessage message, IChannel channel, IGuild guild, IUser author, CancellationToken cancellationToken = default)
     {
         // Start a transaction
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -48,6 +46,8 @@ public class DiscordMessageRepository(AppDbContext context,
             await SaveChangesAsync(cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+
+            return discordMessage;
         }
         catch
         {

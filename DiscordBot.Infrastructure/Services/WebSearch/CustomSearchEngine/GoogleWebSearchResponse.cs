@@ -2,9 +2,9 @@
 using System.Text.Json.Serialization;
 using DiscordBot.Domain.Entities;
 
-namespace DiscordBot.Infrastructure.Services;
+namespace DiscordBot.Infrastructure.Services.WebSearch.CustomSearchEngine;
 
-public record GoogleWebSearchResponseDto(
+public record GoogleWebSearchResponse(
     [property: JsonPropertyName("items")] ImmutableList<GoogleWebSearchResponseItem> Items)
 {
     public WebSearchResponse ToWebSearchResult() =>
@@ -14,7 +14,6 @@ public record GoogleWebSearchResponseDto(
                 googleItem.Link,
                 googleItem.DisplayLink,
                 googleItem.Snippet,
-                googleItem.Pagemap?.MainImages?.ConvertAll(img => img.ToWebSearchImage()) ?? [],
                 googleItem.Pagemap?.Thumbnails?.ConvertAll(img => img.ToWebSearchImage()) ?? [])));
 }
 

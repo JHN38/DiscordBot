@@ -1,7 +1,7 @@
 ﻿namespace DiscordBot.Domain.Entities;
 
 /// <summary>
-/// Represents a collection of search result items.
+/// Represents a common interface for web search responses.
 /// </summary>
 public record WebSearchResponse(
     IEnumerable<WebSearchResponseItem> Items);
@@ -14,8 +14,7 @@ public record WebSearchResponseItem(
     string Link,
     string DisplayLink,
     string Snippet,
-    List<WebSearchImage> MainImages,
-    List<WebSearchImage> Thumbnails);
+    IEnumerable<WebSearchImage> Thumbnails);
 
 /// <summary>
 /// Represents a common base model for web search images.

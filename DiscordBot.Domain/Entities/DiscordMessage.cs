@@ -20,4 +20,9 @@ public class DiscordMessage : DiscordEntity
 
     public ulong ChannelId { get; set; }
     public virtual DiscordChannel Channel { get; set; } = null!;
+
+    public ulong? ReferencedMessageId { get; set; }
+    public virtual DiscordMessage? ReferencedMessage { get; set; } = null!;
+
+    public virtual ICollection<DiscordMessage> ReferencedByMessages { get; set; } = [];
 }

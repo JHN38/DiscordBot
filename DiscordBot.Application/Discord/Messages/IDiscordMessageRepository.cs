@@ -6,7 +6,7 @@ namespace DiscordBot.Application.Discord.Messages;
 
 public interface IDiscordMessageRepository : IRepository<ulong, DiscordMessage>
 {
-    Task AddWithDependenciesAsync(IMessage message, IChannel channel, IGuild guild, IUser author, CancellationToken cancellationToken = default);
+    Task<DiscordMessage> AddWithDependenciesAsync(IMessage message, IChannel channel, IGuild guild, IUser author, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<string>> GetFirstMessagesAsync(int numberOfMessages, CancellationToken cancellationToken = default);
     Task<IEnumerable<string>> GetLastMessagesAsync(int numberOfMessages, CancellationToken cancellationToken = default);

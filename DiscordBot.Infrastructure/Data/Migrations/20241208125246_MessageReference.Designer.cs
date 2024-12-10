@@ -3,6 +3,7 @@ using System;
 using DiscordBot.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DiscordBot.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241208125246_MessageReference")]
+    partial class MessageReference
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -209,7 +212,7 @@ namespace DiscordBot.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("DiscordBot.Domain.Entities.DiscordMessage", "ReferencedMessage")
-                        .WithMany("ReferencedByMessages")
+                        .WithMany()
                         .HasForeignKey("ReferencedMessageId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -262,11 +265,6 @@ namespace DiscordBot.Infrastructure.Data.Migrations
                     b.Navigation("Channels");
 
                     b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("DiscordBot.Domain.Entities.DiscordMessage", b =>
-                {
-                    b.Navigation("ReferencedByMessages");
                 });
 
             modelBuilder.Entity("DiscordBot.Domain.Entities.DiscordUser", b =>

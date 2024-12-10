@@ -25,6 +25,21 @@ public class CreateMessageEventHandler(IDiscordMessageRepository messageReposito
             return;
         }
 
+        if (message.ReferencedMessage is { } referencedMessage)
+        {
+            if (referencedMessage is not { Channel: IGuildChannel referencedMessageChannel })
+            {
+                // Handle messages not from a guild channel
+                return;
+            }
+
+            // Add the referenced message (if any) first
+            await messageRepository.GetOrCreateEntityAsync(message.ReferencedMessage.Id, () =>
+                messageRepository.AddWithDependenciesAsync(referencedMessage, referencedMessageChannel,
+                    referencedMessageChannel.Guild, referencedMessage.Author, cancellationToken),
+                cancellationToken);
+        }
+
         await messageRepository.AddWithDependenciesAsync(message, channel, guild, author, cancellationToken);
     }
 }

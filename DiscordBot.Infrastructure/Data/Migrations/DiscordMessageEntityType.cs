@@ -23,11 +23,11 @@ namespace DiscordBot.Infrastructure.Data.Migrations
                 "DiscordBot.Domain.Entities.DiscordMessage",
                 typeof(DiscordMessage),
                 baseEntityType,
-                propertyCount: 10,
-                navigationCount: 3,
+                propertyCount: 11,
+                navigationCount: 4,
                 servicePropertyCount: 1,
-                foreignKeyCount: 3,
-                unnamedIndexCount: 3,
+                foreignKeyCount: 4,
+                unnamedIndexCount: 4,
                 keyCount: 1);
 
             var id = runtimeEntityType.AddProperty(
@@ -95,6 +95,13 @@ namespace DiscordBot.Infrastructure.Data.Migrations
                 fieldInfo: typeof(AuditableEntityBase<ulong>).GetField("<ModifiedOn>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 nullable: true);
 
+            var referencedMessageId = runtimeEntityType.AddProperty(
+                "ReferencedMessageId",
+                typeof(ulong?),
+                propertyInfo: typeof(DiscordMessage).GetProperty("ReferencedMessageId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(DiscordMessage).GetField("<ReferencedMessageId>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                nullable: true);
+
             var timestamp = runtimeEntityType.AddProperty(
                 "Timestamp",
                 typeof(DateTimeOffset),
@@ -120,6 +127,9 @@ namespace DiscordBot.Infrastructure.Data.Migrations
 
             var index1 = runtimeEntityType.AddIndex(
                 new[] { guildId });
+
+            var index2 = runtimeEntityType.AddIndex(
+                new[] { referencedMessageId });
 
             return runtimeEntityType;
         }
@@ -200,6 +210,24 @@ namespace DiscordBot.Infrastructure.Data.Migrations
                 typeof(ICollection<DiscordMessage>),
                 propertyInfo: typeof(DiscordGuild).GetProperty("Messages", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 fieldInfo: typeof(DiscordGuild).GetField("<Messages>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                propertyAccessMode: PropertyAccessMode.Field);
+
+            return runtimeForeignKey;
+        }
+
+        public static RuntimeForeignKey CreateForeignKey4(RuntimeEntityType declaringEntityType, RuntimeEntityType principalEntityType)
+        {
+            var runtimeForeignKey = declaringEntityType.AddForeignKey(new[] { declaringEntityType.FindProperty("ReferencedMessageId") },
+                principalEntityType.FindKey(new[] { principalEntityType.FindProperty("Id") }),
+                principalEntityType,
+                deleteBehavior: DeleteBehavior.Restrict);
+
+            var referencedMessage = declaringEntityType.AddNavigation("ReferencedMessage",
+                runtimeForeignKey,
+                onDependent: true,
+                typeof(DiscordMessage),
+                propertyInfo: typeof(DiscordMessage).GetProperty("ReferencedMessage", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly),
+                fieldInfo: typeof(DiscordMessage).GetField("<ReferencedMessage>k__BackingField", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly),
                 propertyAccessMode: PropertyAccessMode.Field);
 
             return runtimeForeignKey;

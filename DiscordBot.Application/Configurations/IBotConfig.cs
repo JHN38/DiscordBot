@@ -2,8 +2,8 @@
 
 public interface IBotConfig
 {
-    List<ulong>? AdminIds { get; init; }
-    bool AlwaysDownloadUsers { get; init; }
+    string Token { get; init; }
+    ulong[]? AdminIds { get; init; }
     string? TextCommandPrefix { get; init; }
-    string? Token { get; init; }
+    bool AlwaysDownloadUsers { get; init; }
 }

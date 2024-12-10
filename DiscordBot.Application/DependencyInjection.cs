@@ -18,6 +18,8 @@ public static class DependencyInjectionExtensions
         services.AddSingleton(new CountryHelper());
         services.AddTransient<IDiscordUserDisplayNameResolver, DiscordUserDisplayNameResolver>();
 
+        services.AddScoped<IChatService, ChatService>();
+
         return services;
     }
 }

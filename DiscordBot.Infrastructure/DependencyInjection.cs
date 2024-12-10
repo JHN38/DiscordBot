@@ -8,12 +8,14 @@ using DiscordBot.Infrastructure.Data.Interceptors;
 using DiscordBot.Infrastructure.Data.Migrations;
 using DiscordBot.Infrastructure.Data.Repositories;
 using DiscordBot.Infrastructure.Services;
+using DiscordBot.Infrastructure.Services.WebSearch.CustomSearchEngine;
 using Microsoft.EntityFrameworkCore; // Add this using directive
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenAI;
 
 namespace DiscordBot.Infrastructure;
 
@@ -56,11 +58,17 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IAppDbContext>(s => s.GetRequiredService<AppDbContext>());
+        services.AddScoped(typeof(IDbInfo), typeof(DbInfo));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IDiscordMessageRepository, DiscordMessageRepository>();
 
         services.AddSingleton(TimeProvider.System);
+
+        var openAIApiKey = configuration.GetSection("ChatGpt:ApiKey").Get<string>();
+        services.AddScoped(s => new OpenAIClient(openAIApiKey));
+        services.AddScoped<IChatCompletionService, ChatCompletionService>();
+        services.AddScoped<IChatToolFactory, ChatToolFactory>();
 
         return services;
     }

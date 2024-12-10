@@ -91,6 +91,11 @@ public class Repository<TId, TEntity>(AppDbContext context) : RepositoryBase<TEn
         await GetByIdAsync(id, cancellationToken) ?? createEntity();
 
     /// <inheritdoc />
+    public async Task<TEntity> GetOrCreateEntityAsync(TId id, Func<Task<TEntity>> createEntityAsync,
+        CancellationToken cancellationToken = default) =>
+        await GetByIdAsync(id, cancellationToken) ?? await createEntityAsync();
+
+    /// <inheritdoc />
     public async Task AddIfNewAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         if (!await _dbSet.AnyAsync(e => e.Id.Equals(entity.Id), cancellationToken))

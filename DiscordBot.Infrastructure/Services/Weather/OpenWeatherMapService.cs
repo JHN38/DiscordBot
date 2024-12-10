@@ -48,7 +48,7 @@ public class OpenWeatherMapService(ILogger<OpenWeatherMapService> logger,
         var response = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
         // Cache the response
-        var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(config.Value.CacheDuration);
+        var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(config.Value.CacheDuration ?? TimeSpan.Zero);
         memoryCache.Set(url, response, cacheEntryOptions);
 
         return ProcessResponse(response, requestType);

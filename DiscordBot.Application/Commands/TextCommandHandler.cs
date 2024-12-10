@@ -22,9 +22,15 @@ public sealed partial class TextCommandHandler(ILogger<TextCommandHandler> logge
     private static partial Regex SearchCommandRegex();
 
     [GeneratedRegex("""
-        ^(?<cmd>msg|m)\s+(?<action>get|g)\s+(?<args>.*)
+        ^(?<cmd>msg|m)\s+(?<action>\w+)\s+(?<args>.*)
         """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
     private static partial Regex MessageCommandRegex();
+
+    [GeneratedRegex("""
+        ^(?<cmd>database|db)\s+(?<action>get|g)\s+(?<args>.*)
+        """, RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex DatabaseCommandRegex();
+
 
     public async Task<IUserMessage?> Handle(TextCommand notification, CancellationToken cancellationToken)
     {
@@ -60,6 +66,15 @@ public sealed partial class TextCommandHandler(ILogger<TextCommandHandler> logge
                 .Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
             return await mediator.Send(new MessageCommand(message, action, args), cancellationToken);
+        }
+
+        if (DatabaseCommandRegex().Match(notification.Command) is { Success: true } databaseCommandMatch)
+        {
+            var action = databaseCommandMatch.Groups["action"].Value;
+            var args = databaseCommandMatch.Groups["args"].Value
+                .Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+            return await mediator.Send(new DatabaseCommand(message, action, args), cancellationToken);
         }
 
         logger.LogWarning("Unknown command: {Command}", notification.Command);

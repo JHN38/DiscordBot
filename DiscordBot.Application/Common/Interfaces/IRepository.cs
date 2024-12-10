@@ -107,6 +107,15 @@ public interface IRepository<TId, TEntity> : IRepositoryBase<TEntity>
     Task<TEntity> GetOrCreateEntityAsync(TId id, Func<TEntity> createEntity, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves an entity by its identifier or creates a new one asynchronously if it does not exist.
+    /// </summary>
+    /// <param name="id">The identifier of the entity.</param>
+    /// <param name="createEntityAsync">A function to create a new entity asynchronously if it does not exist.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The existing or newly created entity.</returns>
+    Task<TEntity> GetOrCreateEntityAsync(TId id, Func<Task<TEntity>> createEntityAsync, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a new entity if it does not already exist in the repository.
     /// </summary>
     /// <param name="entity">The entity to add.</param>

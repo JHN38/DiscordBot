@@ -56,7 +56,7 @@ public class WebSearchCommandHandler(ILogger<WebSearchCommandHandler> logger,
                 .WithColor(Color.Blue)
                 .WithDescription(item.Snippet);
 
-            if (item.Thumbnails.Count != 0 && item.Thumbnails.First(t => t.Src != null) is WebSearchImage thumbnail)
+            if (item.Thumbnails.Any() && item.Thumbnails.First(t => t.Src != null) is WebSearchImage thumbnail)
             {
                 embedBuilder.WithThumbnailUrl(thumbnail.Src);
             }

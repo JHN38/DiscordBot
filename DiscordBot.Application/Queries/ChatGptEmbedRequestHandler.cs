@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using ChatGptNet;
 using ChatGptNet.Extensions;
 using ChatGptNet.Models;
+using CSharpFunctionalExtensions;
 using Discord;
 using DiscordBot.Application.Common.Helpers;
 using DiscordBot.Application.Configurations;
@@ -20,6 +21,11 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
                                    IBotConfig config,
                                    IMediator mediator) : IRequestHandler<ChatGptEmbedRequest, IUserMessage>
 {
+    private readonly ILogger<ChatGptEmbedRequestHandler> _logger = logger;
+    private readonly IChatGptClient _chatGptClient = chatGptClient;
+    private readonly IBotConfig _config = config;
+    private readonly IMediator _mediator = mediator;
+
     private readonly string _initialPrompt = """
             The user you're talking to is a Discord user named \"{user}\".
             Keep your answers brief and to the point. The current datetime is {dateTimeUtc}.
@@ -125,18 +131,18 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
             .Replace("{dateTimeUtc}", dateTimeUtc)
             .Replace("{user}", user);
 
-        var conversationId = await chatGptClient.SetupAsync(initialPrompt, cancellationToken: cancellationToken);
+        var conversationId = await _chatGptClient.SetupAsync(initialPrompt, cancellationToken: cancellationToken);
         var toolParameters = new ChatGptToolParameters
         {
             ToolChoice = ChatGptToolChoices.Auto,   // This is the default if functions are present.
             Tools = _functions.ToTools()
         };
 
-        var response = await chatGptClient.AskAsync(conversationId, request.Prompt, toolParameters, cancellationToken: cancellationToken);
+        var response = await _chatGptClient.AskAsync(conversationId, request.Prompt, toolParameters, cancellationToken: cancellationToken);
 
         if (!response.IsSuccessful)
         {
-            logger.LogWarning("Failed to generate response for mention by user {User} for prompt \"{Prompt}\".\r\nIsContentFiltered: {IsContentFiltered} / IsPromptFiltered: {IsPromptFiltered}",
+            _logger.LogWarning("Failed to generate response for mention by user {User} for prompt \"{Prompt}\".\r\nIsContentFiltered: {IsContentFiltered} / IsPromptFiltered: {IsPromptFiltered}",
                 user, request.Prompt, response.IsContentFiltered, response.IsPromptFiltered);
             return await message.ReplyAsync("Failed to generate response. Please try again later.");
         }
@@ -146,7 +152,7 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
         {
             var functionCall = response.GetFunctionCall();
             if (functionCall is not null && response.GetToolCalls()?.FirstOrDefault() is ChatGptToolCall tool)
-                response = await CallFunction(message, chatGptClient, request, user, conversationId, tool, toolParameters, functionCall, cancellationToken);
+                response = await CallFunction(message, _chatGptClient, request, user, conversationId, tool, toolParameters, functionCall, cancellationToken);
 
             if (response.GetContent() is string content)
             {
@@ -160,10 +166,10 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
 
     private async Task<ChatGptResponse> CallFunction(IMessage message, IChatGptClient chatGptClient, ChatGptEmbedRequest request, string user, Guid conversationId, ChatGptToolCall tool, ChatGptToolParameters toolParameters, ChatGptFunctionCall functionCall, CancellationToken cancellationToken)
     {
-        logger.LogInformation("User {User} called function {Function} with arguments {Arguments}.",
+        _logger.LogInformation("User {User} called function {Function} with arguments {Arguments}.",
             user, functionCall.Name, functionCall.Arguments);
 
-        logger.LogDebug("Tool Request ({FunctionName}):\n\t{FunctionArguments}", functionCall.Name, functionCall.Arguments);
+        _logger.LogDebug("Tool Request ({FunctionName}):\n\t{FunctionArguments}", functionCall.Name, functionCall.Arguments);
 
         if (string.IsNullOrEmpty(functionCall.Arguments))
         {
@@ -193,7 +199,7 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
             _ => throw new NotSupportedException("Function not supported")
         };
 
-        logger.LogDebug("Tool Response ({FunctionName}):\n\t{FunctionResponse}", functionCall.Name, functionResponse);
+        _logger.LogDebug("Tool Response ({FunctionName}):\n\t{FunctionResponse}", functionCall.Name, functionResponse);
 
         return await FunctionCallResponse(chatGptClient, conversationId, tool, toolParameters, functionResponse, cancellationToken);
     }
@@ -235,7 +241,7 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
             return "Cannot perform a search without arguments.";
 
         var args = JsonSerializer.Deserialize<GptWebSearchArguments>(arguments) ?? throw new InvalidOperationException("Invalid JSON format for weather arguments.");
-        var response = await mediator.Send(new WebSearchRequest(args.Query, 10, args.CountryRestriction, args.LanguageRestriction), cancellationToken);
+        var response = await _mediator.Send(new WebSearchRequest(args.Query, 10, args.CountryRestriction, args.LanguageRestriction), cancellationToken);
 
         if (response is null || !response.Items.Any())
             return "No search results found.";
@@ -249,7 +255,7 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
             return "Cannot get weather without arguments.";
 
         var args = JsonSerializer.Deserialize<GptWeatherArguments>(arguments) ?? throw new InvalidOperationException("Invalid JSON format for weather arguments.");
-        var response = await mediator.Send(new WeatherRequest(WeatherRequestType.Weather, args.Location, args.Units), cancellationToken);
+        var response = await _mediator.Send(new WeatherRequest(WeatherRequestType.Weather, args.Location, args.Units), cancellationToken);
 
         if (response is null || response.Items.Count == 0)
             return "No weather data was returned.";
@@ -262,44 +268,35 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
         var channel = message.Channel;
         var guildChannel = (IGuildChannel)channel;
         var guild = guildChannel.Guild;
-        var author = await guild.GetUserAsync(message.Author.Id, CacheMode.AllowDownload);
-        var targetId = arguments.UserId;
-
-        if (arguments.UserId == 0)
-            return $$"""{"success": false,"error": "No valid Discord user found in the prompt."}""";
-
-        if (await guild.GetRoleAsync(arguments.UserId) is not null)
-            return $$"""{"success": false,"error": "Cannot timeout a Discord role."}""";
-
-        if (arguments.UserId == 1)
-            targetId = author.Id;
 
         if (arguments.UserId == 2)
-            return $$"""{"success": false,"error": "Cannot time yourself out."}""";
+            return $$"""{"success":false,"error":"Cannot time yourself out."}""";
 
-        if (await guild.GetUserAsync(targetId, CacheMode.AllowDownload) is not IGuildUser user)
-            return $$"""{"success": false,"error": "Cannot time out a user that is not in the Discord server."}""";
+        var author = await guild.GetUserAsync(message.Author.Id, CacheMode.AllowDownload);
+        var bot = await guild.GetCurrentUserAsync();
+        var resultUser = await GetTargetUser(arguments.UserId, guild, author, bot, cancellationToken);
+        if (resultUser.IsFailure)
+            return $$"""{"success":false,"error": "{{resultUser.Error}}"}""";
 
-        var userName = user.Nickname ?? user.DisplayName ?? user.GlobalName;
-
-        if (!author.GuildPermissions.Administrator && config.AdminIds?.Exists(id => id == author.Id) != true)
-            return $$"""{"success": false,"error": "User {{author.Mention}} is not an Administrator."}""";
-
-        if (!arguments.Instructed || arguments.UserId == 1)
+        var user = resultUser.Value;
+        if (!arguments.Instructed)
         {
-            logger.LogWarning("I attempted to time out {UserName} without explicit instruction.", userName);
-            return $$"""{"success": true,"user": "{{user.Mention}}","error": "Only a warning for now."}""";
+            _logger.LogWarning("I attempted to time out {UserName} without explicit instruction.", user.DisplayName);
+            return $$"""{"success":true,"user":"{{user.Mention}}","error":"Only a warning for now."}""";
         }
+
+        if (arguments.UserId == 1)
+            _logger.LogWarning("User {UserName} timed themselves out.", user.DisplayName);
 
         try
         {
             await user.SetTimeOutAsync(TimeSpan.FromSeconds(arguments.Duration), new RequestOptions { AuditLogReason = arguments.Reason, CancelToken = cancellationToken });
-            return $$"""{"success": true,"user": "{{user.Mention}}","duration": {{arguments.Duration}}}""";
+            return $$"""{"success":true,"user":"{{user.Mention}}","duration":{{arguments.Duration}}}""";
         }
         catch (Exception e)
         {
-            logger.LogWarning(e, "Failed to time out user {UserName}.", userName);
-            return $$"""{"success": false,"error": "{{e.Message}}"}""";
+            _logger.LogWarning(e, "Failed to time out user {UserName}.", user.DisplayName);
+            return $$"""{"success":false,"error":"{{e.Message}}"}""";
         }
     }
 
@@ -310,37 +307,40 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
         var guild = guildChannel.Guild;
         var author = await guild.GetUserAsync(message.Author.Id, CacheMode.AllowDownload);
         var bot = await guild.GetCurrentUserAsync();
-        var targetId = arguments.UserId;
 
-        if (arguments.UserId == 0)
-            return $$"""{"success": false,"error": "No valid Discord user found in the prompt."}""";
+        var resultUser = await GetTargetUser(arguments.UserId, guild, author, bot, cancellationToken);
+        if (resultUser.IsFailure)
+            return $$"""{"success":false,"error": "{{resultUser.Error}}"}""";
 
-        if (await guild.GetRoleAsync(arguments.UserId) is not null)
-            return $$"""{"success": false,"error": "Cannot timeout a Discord role."}""";
-
-        if (arguments.UserId > 1 && !author.GuildPermissions.Administrator && config.AdminIds?.Exists(id => id == author.Id) != true)
-            return $$"""{"success": false,"error": "User {{author.Mention}} is not an Administrator."}""";
-
-        if (arguments.UserId == 1)
-            targetId = author.Id;
-
-        if (arguments.UserId == 2)
-            targetId = bot.Id;
-
-        if (await guild.GetUserAsync(targetId, CacheMode.AllowDownload) is not IGuildUser user)
-            return $$"""{"success": false,"error": "Cannot change the nickname of a user that is not in the Discord server."}""";
-
+        var user = resultUser.Value;
         try
         {
             await user.ModifyAsync(gup => gup.Nickname = arguments.Nickname, new RequestOptions { AuditLogReason = arguments.Reason, CancelToken = cancellationToken });
-            return $$"""{"success": true,"user": "{{user.Mention}}","newNickname": "{{user.Nickname}}"}""";
+            return $$"""{"success":true,"user":"{{user.Mention}}","newNickname":"{{user.Nickname}}"}""";
         }
         catch (Exception e)
         {
-            logger.LogWarning(e, "Failed to rename user {UserName}.", user.Nickname ?? user.DisplayName ?? user.GlobalName);
-            return $$"""{"success": false,"error": "{{e.Message}}"}""";
+            _logger.LogWarning(e, "Failed to rename user {UserName}.", user.DisplayName);
+            return $$"""{"success":false,"error":"{{e.Message}}"}""";
         }
     }
+
+    private async Task<Result<IGuildUser>> GetTargetUser(ulong targetId, IGuild guild, IGuildUser author, IGuildUser bot, CancellationToken cancellationToken = default) =>
+        targetId switch
+        {
+            0 => Result.Failure<IGuildUser>("No valid Discord user found in the prompt."),
+            _ when guild.Roles.Any(role => role.Id == targetId) => Result.Failure<IGuildUser>("Cannot timeout a Discord role."),
+            _ when targetId > 1 && !author.GuildPermissions.Administrator && _config?.AdminIds is { } adminIds && !Array.Exists(adminIds, id => id == author.Id) =>
+                Result.Failure<IGuildUser>($"User {author.Mention} is not an Administrator."),
+            1 => await GetResolvedUser(author.Id, guild, cancellationToken), // llm determined the target user to be the author
+            2 => await GetResolvedUser(bot.Id, guild, cancellationToken), // llm determined the target user to be the bot
+            _ => await GetResolvedUser(targetId, guild, cancellationToken) // llm determined the target user to be the user with the provided ID
+        };
+
+    private static async Task<Result<IGuildUser>> GetResolvedUser(ulong resolvedTargetId, IGuild guild, CancellationToken cancellationToken = default) =>
+        await guild.GetUserAsync(resolvedTargetId, options: new() { CancelToken = cancellationToken }) is { } foundUser
+            ? Result.Success(foundUser)
+            : Result.Failure<IGuildUser>("Cannot change the nickname of a user that is not in the Discord server.");
 
     private async Task<string> GetWeatherForecastAsync(string? arguments, CancellationToken cancellationToken = default)
     {
@@ -348,7 +348,7 @@ public class ChatGptEmbedRequestHandler(ILogger<ChatGptEmbedRequestHandler> logg
             return "Cannot get weather without arguments.";
 
         var args = JsonSerializer.Deserialize<GptWeatherArguments>(arguments) ?? throw new InvalidOperationException("Invalid JSON format for weather arguments.");
-        var response = await mediator.Send(new WeatherRequest(WeatherRequestType.Forecast, args.Location, args.Units), cancellationToken);
+        var response = await _mediator.Send(new WeatherRequest(WeatherRequestType.Forecast, args.Location, args.Units), cancellationToken);
 
         if (response is null || response.Items.Count == 0)
             return "No weather data was returned.";

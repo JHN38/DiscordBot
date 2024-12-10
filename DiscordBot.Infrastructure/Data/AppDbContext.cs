@@ -131,6 +131,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                   .WithMany(e => e.Messages)
                   .HasForeignKey(e => e.GuildId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional self-referencing relationship: Message references another message
+            entity.HasOne(e => e.ReferencedMessage)
+                  .WithMany(e => e.ReferencedByMessages)
+                  .HasForeignKey(e => e.ReferencedMessageId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .IsRequired(false);
         });
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.WebSocket;
 using MediatR;
 
 namespace DiscordBot.Application.Events;
@@ -12,12 +11,12 @@ public class GuildMessageReceivedNotificationHandler(IMediator mediator) : INoti
     {
         var message = notification.Message;
 
-        if (message is SocketUserMessage userMessage)
+        if (message is IUserMessage userMessage)
         {
             await mediator.Publish(new GuildUserMessageReceivedNotification(userMessage), cancellationToken);
         }
 
-        if (message is SocketSystemMessage systemMessage)
+        if (message is ISystemMessage systemMessage)
         {
             await mediator.Publish(new GuildSystemMessageReceivedNotification(systemMessage), cancellationToken);
         }

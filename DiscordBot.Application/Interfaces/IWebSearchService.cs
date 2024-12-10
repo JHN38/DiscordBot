@@ -20,4 +20,6 @@ public interface IWebSearchService
     /// <param name="languageRestriction">Optional language restriction for documents.</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the search results as a string.</returns>
     Task<WebSearchResponse?> SearchAsync(string query, int? resultCount, string? countryRestriction = null, string? languageRestriction = null, CancellationToken cancellationToken = default);
+
+    Task<string> SearchImageAsync(IDictionary<string, string> queryParams);
 }

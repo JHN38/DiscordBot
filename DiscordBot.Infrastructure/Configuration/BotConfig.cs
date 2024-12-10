@@ -4,8 +4,8 @@ namespace DiscordBot.Infrastructure.Configuration;
 
 public record BotConfig : IBotConfig
 {
-    public List<ulong>? AdminIds { get; init; }
+    public required string Token { get; init; }
+    public ulong[]? AdminIds { get; init; }
     public string? TextCommandPrefix { get; init; }
-    public bool AlwaysDownloadUsers { get; init; }
-    public string? Token { get; init; }
+    public bool AlwaysDownloadUsers { get; init; } = true;
 }
