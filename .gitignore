@@ -364,3 +364,14 @@ FodyWeavers.xsd
 
 # User secrets
 secrets.json
+
+# env
+.env
+
+# Aspir8
+aspirate-output/
+aspirate-state.json
+aspirate.json
+manifest.json
+*.db
+*.db-*

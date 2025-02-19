@@ -1,41 +1,36 @@
-﻿using Discord;
-using Discord.WebSocket;
+﻿using System.Collections.Immutable;
+using Discord;
 
 namespace DiscordBot.Application.Common.Helpers;
 
-internal class MessageContentHelper
+public static class MessageContentHelper
 {
-    public static async Task<string> MentionsToText(SocketUserMessage message)
+    /// <summary>
+    /// Strips the bot mention from the start of the content, if present.
+    /// </summary>
+    /// <param name="content">The content string potentially containing the bot mention.</param>
+    /// <param name="user">The user whose mention to strip.</param>
+    /// <returns>
+    /// The content string without the bot mention at the start, or null if the resulting string is null or whitespace.
+    /// </returns>
+    public static string? StripUserMention(string content, IUser user)
     {
-        var msg = message.Content;
-
-        var guildChannel = (IGuildChannel)message.Channel;
-        var guild = guildChannel.Guild;
-
-        foreach (var mentionedUser in message.MentionedUsers)
+        if (content.StartsWith(user.Mention))
         {
-            var user = await guild.GetUserAsync(mentionedUser.Id);
-            msg = msg.Replace(user.Mention, $"@{user.DisplayName ?? user.GlobalName ?? user.Username}");
+            content = content[user.Mention.Length..].TrimStart();
         }
-
-        return msg;
-    }
-    public static string? StripBotMention(string content)
-    {
-        var span = content.AsSpan();
-        content = span[(span.IndexOf(' ') + 1)..].ToString();
 
         return string.IsNullOrWhiteSpace(content) ? null : content;
     }
 
-    public static List<string> SplitResponseIntoChunks(string response, int maxChunkSize = 2000)
+    public static ImmutableList<string> SplitResponseIntoChunks(string response, int maxChunkSize = 2000)
     {
         var result = new List<string>();
         var span = response.AsSpan();
 
         while (span.Length > maxChunkSize)
         {
-            var splitIndex = span.Slice(0, maxChunkSize).LastIndexOf(' ');
+            var splitIndex = span[..maxChunkSize].LastIndexOf(' ');
 
             if (splitIndex == -1)
             {
@@ -51,6 +46,6 @@ internal class MessageContentHelper
             result.Add(span.ToString());
         }
 
-        return result;
+        return [.. result];
     }
 }

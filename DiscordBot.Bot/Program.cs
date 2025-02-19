@@ -3,14 +3,22 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using DiscordBot.Application;
-using DiscordBot.Application.Common.Configuration;
+using DiscordBot.Application.Common.Helpers;
+using DiscordBot.Bot;
 using DiscordBot.Bot.Services;
+using DiscordBot.Infrastructure;
+using DiscordBot.Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
+// Register health checks
+builder.AddDefaultHealthChecks();
+
+// Environment variables
+builder.Configuration.AddEnvironmentVariables("DBOT_");
 
 // Load user secrets in development
 if (builder.Environment.IsDevelopment())
@@ -19,80 +27,63 @@ if (builder.Environment.IsDevelopment())
 }
 
 // Add services to the container.
-builder.Services.AddSingleton((s) =>
+builder.Services.AddControllers();
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+
+// Add services to the container.
+builder.Services.AddSingleton((serviceProvider) =>
     {
-        var options = s.GetRequiredService<IOptions<BotOptions>>();
+        var options = serviceProvider.GetRequiredService<IOptions<BotConfig>>().Value;
+        var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+        var defaultLogLevel = LogLevelHelper.GetDefaultSerilogLogLevel(builder.Configuration) ?? LogEventLevel.Information;
+
+        logger.LogInformation("Default log level is {DefaultLogLevel}", defaultLogLevel);
 
         return new DiscordSocketConfig
         {
-            AlwaysDownloadUsers = options.Value.AlwaysDownloadUsers,
+            AlwaysDownloadUsers = options.AlwaysDownloadUsers,
             DefaultRetryMode = RetryMode.AlwaysRetry,
             GatewayIntents = GatewayIntents.All,
-#if DEBUG
-            LogLevel = LogSeverity.Debug
-#else
-            LogLevel = LogSeverity.Warning
-#endif
+            LogLevel = defaultLogLevel.ConvertToDiscord()
         };
     })
     .AddSingleton<DiscordSocketClient>()
+    .AddSingleton<IDiscordClient>(s => s.GetRequiredService<DiscordSocketClient>())
     .AddSingleton(s => new InteractionService(s.GetRequiredService<DiscordSocketClient>()))
     .AddHostedService<Worker>();
 
 // Add the application services
 builder.Services.AddApplication(builder.Configuration);
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add serilog
 builder.Host.UseSerilog((ctx, config) =>
     config.Enrich.FromLogContext()
-        //.WriteTo.OpenTelemetry(options =>
-        //{
-        //    options.Endpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]!;
-        //    var headers = builder.Configuration["OTEL_EXPORTER_OTLP_HEADERS"]?.Split(',') ?? [];
-        //    foreach (var header in headers)
-        //    {
-        //        var (key, value) = header.Split('=') switch
-        //        {
-        //            [string k, string v] => (k, v),
-        //            var v => throw new Exception($"Invalid header format {v}")
-        //        };
+        .ReadFrom.Configuration(ctx.Configuration));
 
-        //        options.Headers.Add(key, value);
-        //    }
-        //    options.ResourceAttributes.Add("service.name", "discordbot-bot");
-
-        //    //To remove the duplicate issue, we can use the below code to get the key and value from the configuration
-        //    var (otelResourceAttribute, otelResourceAttributeValue) = builder.Configuration["OTEL_RESOURCE_ATTRIBUTES"]?.Split('=') switch
-        //    {
-        //    [string k, string v] => (k, v),
-        //        _ => throw new Exception($"Invalid header format {builder.Configuration["OTEL_RESOURCE_ATTRIBUTES"]}")
-        //    };
-
-        //    options.ResourceAttributes.Add(otelResourceAttribute, otelResourceAttributeValue);
-        //})
-        .ReadFrom.Configuration(ctx.Configuration)
-);
+// Wherever your services are being registered.
+// Before the call to Build().
+builder.Services.AddRequestTimeouts();
+builder.Services.AddOutputCache();
 
 var app = builder.Build();
-
-app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
+app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
+app.MapDefaultEndpoints();
 
-app.Run();
+// Wherever your app has been built, before the call to Run().
+app.UseRequestTimeouts();
+app.UseOutputCache();
+
+await app.RunAsync();
