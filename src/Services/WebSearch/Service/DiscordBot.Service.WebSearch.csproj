@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>dotnet-DiscordBot.Service.WebSearch-c5d518ab-abc6-4c04-87b6-ac1a4a7acdc0</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\DiscordBot.Service.WebSearch.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Contracts\DiscordBot.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,133 @@
+services:
+  # SQL Server database
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: mssql
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${SQLSERVER_SA_PASSWORD}
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" -b
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Main Discord Bot service
+  bot:
+    build:
+      context: .
+      dockerfile: src/Bot/Web/Dockerfile
+    container_name: discordbot-bot
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_URLS=http://+:8080
+      # Wolverine service discovery (Docker container names)
+      - Wolverine__RecordKeepingHost=recordkeeping
+      - Wolverine__WeatherHost=weather
+      - Wolverine__WebSearchHost=websearch
+      # Bot configuration (override via .env file or secrets)
+      - DBOT_Bot__Token=${BOT_TOKEN}
+      - DBOT_Bot__GuildId=${GUILD_ID}
+      - DBOT_SerilogWriteToDiscordWebhookId=${DISCORD_WEBHOOK_ID}
+      - DBOT_SerilogWriteToDiscordWebhookToken=${DISCORD_WEBHOOK_TOKEN}
+    depends_on:
+      recordkeeping:
+        condition: service_healthy
+      weather:
+        condition: service_healthy
+      websearch:
+        condition: service_healthy
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # RecordKeeping Service - handles message persistence
+  recordkeeping:
+    build:
+      context: .
+      dockerfile: src/Services/RecordKeeping/Service/Dockerfile
+    container_name: discordbot-recordkeeping
+    ports:
+      - "5010:5001"
+      - "8081:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DBOT_ConnectionStrings__SqlServer=${SQLSERVER_CONNECTION_STRING}
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Weather Service - handles weather queries
+  weather:
+    build:
+      context: .
+      dockerfile: src/Services/Weather/Service/Dockerfile
+    container_name: discordbot-weather
+    ports:
+      - "5002:5002"
+      - "8082:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DBOT_OpenWeatherApi__ApiKey=${OPENWEATHER_API_KEY}
+      - DBOT_OpenWeatherApi__BaseUrl=https://api.openweathermap.org/data/2.5/
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # WebSearch Service - handles web search queries
+  websearch:
+    build:
+      context: .
+      dockerfile: src/Services/WebSearch/Service/Dockerfile
+    container_name: discordbot-websearch
+    ports:
+      - "5003:5003"
+      - "8083:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DBOT_GoogleApi__ApiKey=${GOOGLE_API_KEY}
+      - DBOT_GoogleApi__SearchEngineId=${GOOGLE_SEARCH_ENGINE_ID}
+      - DBOT_GoogleApi__BaseUrl=https://www.googleapis.com/customsearch/v1
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+networks:
+  discordbot-network:
+    driver: bridge
+
+volumes:
+  mssql-data:

@@ -8,21 +8,34 @@ dotnet_diagnostic.IDE0130.severity = none
 
 # Naming rules
 
+dotnet_naming_rule.constant_fields_should_be_upper_case.severity = suggestion
+dotnet_naming_rule.constant_fields_should_be_upper_case.symbols = constant_fields
+dotnet_naming_rule.constant_fields_should_be_upper_case.style = upper_case
+
 dotnet_naming_rule.private_or_internal_field_should_be__camelcase.severity = suggestion
 dotnet_naming_rule.private_or_internal_field_should_be__camelcase.symbols = private_or_internal_field
 dotnet_naming_rule.private_or_internal_field_should_be__camelcase.style = _camelcase
 
 # Symbol specifications
 
+dotnet_naming_symbols.constant_fields.applicable_kinds = field
+dotnet_naming_symbols.constant_fields.applicable_accessibilities = *
+dotnet_naming_symbols.constant_fields.required_modifiers = const
+
 dotnet_naming_symbols.private_or_internal_field.applicable_kinds = field
 dotnet_naming_symbols.private_or_internal_field.applicable_accessibilities = internal, private, private_protected
-dotnet_naming_symbols.private_or_internal_field.required_modifiers = 
+dotnet_naming_symbols.private_or_internal_field.required_modifiers =
 
 # Naming styles
 
+dotnet_naming_style.upper_case.required_prefix =
+dotnet_naming_style.upper_case.required_suffix =
+dotnet_naming_style.upper_case.word_separator = _
+dotnet_naming_style.upper_case.capitalization = all_upper
+
 dotnet_naming_style._camelcase.required_prefix = _
-dotnet_naming_style._camelcase.required_suffix = 
-dotnet_naming_style._camelcase.word_separator = 
+dotnet_naming_style._camelcase.required_suffix =
+dotnet_naming_style._camelcase.word_separator =
 dotnet_naming_style._camelcase.capitalization = camel_case
 csharp_indent_labels = one_less_than_current
 csharp_using_directive_placement = outside_namespace:silent
@@ -41,6 +54,15 @@ csharp_style_expression_bodied_indexers = true:silent
 csharp_style_expression_bodied_accessors = true:silent
 csharp_style_expression_bodied_lambdas = true:silent
 csharp_style_expression_bodied_local_functions = false:silent
+dotnet_diagnostic.S3358.severity = none
+
+# S2094: Classes should not be empty
+# Disabled due to false positives with Mediator pattern (empty request/notification classes)
+dotnet_diagnostic.S2094.severity = none
+
+# S125: Sections of code should not be commented out
+# Reduced to warning for dev project flexibility
+dotnet_diagnostic.S125.severity = warning
 
 [*.{cs,vb}]
 #### Naming styles ####
@@ -63,31 +85,31 @@ dotnet_naming_rule.non_field_members_should_be_pascal_case.style = pascal_case
 
 dotnet_naming_symbols.interface.applicable_kinds = interface
 dotnet_naming_symbols.interface.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.interface.required_modifiers = 
+dotnet_naming_symbols.interface.required_modifiers =
 
 dotnet_naming_symbols.types.applicable_kinds = class, struct, interface, enum
 dotnet_naming_symbols.types.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.types.required_modifiers = 
+dotnet_naming_symbols.types.required_modifiers =
 
 dotnet_naming_symbols.non_field_members.applicable_kinds = property, event, method
 dotnet_naming_symbols.non_field_members.applicable_accessibilities = public, internal, private, protected, protected_internal, private_protected
-dotnet_naming_symbols.non_field_members.required_modifiers = 
+dotnet_naming_symbols.non_field_members.required_modifiers =
 
 # Naming styles
 
 dotnet_naming_style.begins_with_i.required_prefix = I
-dotnet_naming_style.begins_with_i.required_suffix = 
-dotnet_naming_style.begins_with_i.word_separator = 
+dotnet_naming_style.begins_with_i.required_suffix =
+dotnet_naming_style.begins_with_i.word_separator =
 dotnet_naming_style.begins_with_i.capitalization = pascal_case
 
-dotnet_naming_style.pascal_case.required_prefix = 
-dotnet_naming_style.pascal_case.required_suffix = 
-dotnet_naming_style.pascal_case.word_separator = 
+dotnet_naming_style.pascal_case.required_prefix =
+dotnet_naming_style.pascal_case.required_suffix =
+dotnet_naming_style.pascal_case.word_separator =
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-dotnet_naming_style.pascal_case.required_prefix = 
-dotnet_naming_style.pascal_case.required_suffix = 
-dotnet_naming_style.pascal_case.word_separator = 
+dotnet_naming_style.pascal_case.required_prefix =
+dotnet_naming_style.pascal_case.required_suffix =
+dotnet_naming_style.pascal_case.word_separator =
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 dotnet_style_operator_placement_when_wrapping = beginning_of_line
 tab_width = 4
@@ -109,3 +131,67 @@ dotnet_style_prefer_compound_assignment = true:suggestion
 dotnet_style_prefer_simplified_interpolation = true:suggestion
 dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
 dotnet_style_namespace_match_folder = true:suggestion
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+# Not needed in application code (only library code) - ASP.NET Core context flows automatically
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1848: Use LoggerMessage delegates for improved performance
+# Overkill for application code where logging frequency doesn't justify the complexity
+dotnet_diagnostic.CA1848.severity = none
+
+# CA1819: Properties should not return arrays
+# Suppressed - arrays are acceptable for configuration DTOs
+dotnet_diagnostic.CA1819.severity = none
+
+# CA1031: Do not catch general exception types
+# Suppressed - top-level handlers intentionally catch all exceptions for graceful error handling
+dotnet_diagnostic.CA1031.severity = none
+
+# CA1062: Validate arguments of public methods
+# Suppressed for notification handlers where null is never passed by the mediator framework
+dotnet_diagnostic.CA1062.severity = none
+
+# CA1305: Specify IFormatProvider
+# Suppressed - default culture is acceptable for this application
+dotnet_diagnostic.CA1305.severity = none
+
+# CA1056: URI-like properties should not be strings
+# Suppressed - configuration classes (OpenWeatherMapConfig, GoogleApiConfig, etc.) require string properties for binding
+dotnet_diagnostic.CA1056.severity = none
+
+# CA2227: Collection properties should be read only
+# Suppressed - DTOs for JSON deserialization need mutable properties
+dotnet_diagnostic.CA2227.severity = none
+
+# CA1002: Do not expose generic lists
+# Suppressed - DTOs for JSON deserialization work best with List<T>
+dotnet_diagnostic.CA1002.severity = none
+
+# CA1707: Identifiers should not contain underscores
+# Suppressed - underscores in test names are a common convention (Method_Scenario_ExpectedResult)
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1051: Do not declare visible instance fields
+# FIXED - Converted protected fields to properties in RepositoryBase
+dotnet_diagnostic.CA1051.severity = warning
+
+# CA1054: URI-like parameters should not be strings
+# Suppressed - configuration binding requires string parameters
+dotnet_diagnostic.CA1054.severity = none
+
+# CA1812: Internal class never instantiated
+# Suppressed - DI container instantiates these classes
+dotnet_diagnostic.CA1812.severity = none
+
+# CA1724: Type name conflicts with namespace
+# Suppressed - naming conflicts are acceptable when names are clear in context
+dotnet_diagnostic.CA1724.severity = none
+
+# CA1852: Type can be sealed
+# FIXED - Sealed all handler, service, and repository implementation classes
+dotnet_diagnostic.CA1852.severity = warning
+
+# CA2234: Pass System.Uri objects instead of strings
+# Suppressed - string URLs are acceptable in test code and when URLs are dynamically constructed
+dotnet_diagnostic.CA2234.severity = none

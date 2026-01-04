@@ -1,0 +1,31 @@
+<Solution>
+  <Folder Name="/src/Bot/">
+    <Project Path="src/Bot/Core/DiscordBot.Bot.Core.csproj" />
+    <Project Path="src/Bot/Web/DiscordBot.Bot.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/Weather/">
+    <Project Path="src/Services/Weather/Core/DiscordBot.Service.Weather.Core.csproj" />
+    <Project Path="src/Services/Weather/Infrastructure/DiscordBot.Service.Weather.Infrastructure.csproj" />
+    <Project Path="src/Services/Weather/Service/DiscordBot.Service.Weather.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/WebSearch/">
+    <Project Path="src/Services/WebSearch/Core/DiscordBot.Service.WebSearch.Core.csproj" />
+    <Project Path="src/Services/WebSearch/Infrastructure/DiscordBot.Service.WebSearch.Infrastructure.csproj" />
+    <Project Path="src/Services/WebSearch/Service/DiscordBot.Service.WebSearch.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/RecordKeeping/">
+    <Project Path="src/Services/RecordKeeping/Core/DiscordBot.Service.RecordKeeping.Core.csproj" />
+    <Project Path="src/Services/RecordKeeping/Persistence/DiscordBot.Service.RecordKeeping.Persistence.csproj" />
+    <Project Path="src/Services/RecordKeeping/Service/DiscordBot.Service.RecordKeeping.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Contracts/DiscordBot.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DiscordBot.Tests.Functional/DiscordBot.Tests.Functional.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+  </Folder>
+</Solution>
