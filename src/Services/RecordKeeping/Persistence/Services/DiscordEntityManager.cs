@@ -27,21 +27,12 @@ public sealed partial class DiscordEntityManager(
     private const ulong NO_DISCORD_ID = 0;
 
     /// <inheritdoc />
-    /// <remarks>
-    /// This method intentionally uses two separate DbContext instances:
-    /// 1. First context (checkDb): Read-only existence check with AsNoTracking
-    /// 2. ResolveDependenciesAsync: Creates additional contexts for parallel dependency resolution
-    /// 3. Second context (db): Fresh context for entity materialization and save
-    ///
-    /// This separation prevents entity tracking conflicts when ResolveAsync creates
-    /// entities in parallel contexts that would otherwise conflict with the main
-    /// save operation's change tracker.
-    /// </remarks>
     public async Task<EntityReferenceDto> GetOrAddMessageAsync(DiscordMessageDto message, CancellationToken cancellationToken = default)
     {
-        // Check if message already exists
-        await using var checkDb = await factory.CreateDbContextAsync(cancellationToken);
-        var existing = await checkDb.Messages
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+
+        // Check if message exists first (fast path)
+        var existing = await db.Messages
             .AsNoTracking()
             .Where(m => m.DiscordId == message.DiscordId)
             .Select(m => new { m.Id, m.DiscordId })
@@ -52,34 +43,55 @@ public sealed partial class DiscordEntityManager(
 
         LogSavingMessage(message.DiscordId, message.Author.DiscordId, message.Channel.DiscordId);
 
-        // Resolve dependencies in parallel: Author and Channel (Channel includes Guild)
-        var resolutions = await ResolveDependenciesAsync(message, cancellationToken);
+        // Resolve dependencies using existing pattern
+        DiscordGuild? guild = null;
+        if (message.Channel.Guild is { } g)
+            guild = await db.Guilds.GetOrCreateByDiscordIdAsync(db, g.DiscordId, g.ToEntity, cancellationToken);
 
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var channel = await db.Channels.GetOrCreateByDiscordIdAsync(db, message.Channel.DiscordId, CreateChannel, cancellationToken);
+        var author = await db.Users.GetOrCreateByDiscordIdAsync(db, message.Author.DiscordId, message.Author.ToEntity, cancellationToken);
 
-        // Materialize in dependency order: Guild → Channel → Author
-        var guild = MaterializeOptional(db, resolutions.Channel.Guild);
-        var channel = Materialize(db, resolutions.Channel.Channel);
-        var author = Materialize(db, resolutions.Author);
+        // Get or create message
+        var entity = await db.Messages.GetOrCreateByDiscordIdAsync(db, message.DiscordId, CreateMessage, cancellationToken);
 
-        // Link new channel to guild
-        if (guild is not null && !resolutions.Channel.Channel.Exists)
-            channel.Guild = guild;
+        LogMessageSaved(message.DiscordId, entity.Id);
+        return new EntityReferenceDto(entity.Id, entity.DiscordId);
 
-        // Create message with dependencies (Guild derived from Channel)
-        var messageEntity = message.ToEntity();
-        messageEntity.Author = author;
-        messageEntity.Channel = channel;
-        messageEntity.Guild = guild;
+        DiscordChannel CreateChannel()
+        {
+            var ch = message.Channel.ToEntity();
+            ch.Guild = guild;
+            return ch;
+        }
 
-        if (message.ReferencedMessageDiscordId is { } refId)
-            await LinkReferencedMessageAsync(db, messageEntity, refId, cancellationToken);
+        DiscordMessage CreateMessage()
+        {
+            var msg = message.ToEntity();
+            msg.Author = author;
+            msg.Channel = channel;
+            msg.Guild = guild;
 
-        db.Messages.Add(messageEntity);
-        await db.SaveChangesAsync(cancellationToken);
+            // Handle ReferencedMessageId via shadow property if needed
+            if (message.ReferencedMessageDiscordId is { } refId)
+            {
+                var refMessageId = db.Messages
+                    .Where(m => m.DiscordId == refId)
+                    .Select(m => (int?)m.Id)
+                    .FirstOrDefault();
 
-        LogMessageSaved(message.DiscordId, messageEntity.Id);
-        return new EntityReferenceDto(messageEntity.Id, messageEntity.DiscordId);
+                if (refMessageId is { } id)
+                {
+                    db.Entry(msg).Property(REFERENCED_MESSAGE_ID_PROPERTY).CurrentValue = id;
+                    LogLinkedReferencedMessage(id);
+                }
+                else
+                {
+                    LogReferencedMessageNotFound(refId);
+                }
+            }
+
+            return msg;
+        }
     }
 
     /// <inheritdoc />
@@ -117,93 +129,6 @@ public sealed partial class DiscordEntityManager(
             return ch;
         }
     }
-
-    private async Task<MessageDependencies> ResolveDependenciesAsync(DiscordMessageDto message, CancellationToken ct)
-    {
-        // Author and Channel are independent - resolve in parallel
-        var authorTask = ResolveAsync(message.Author.DiscordId, message.Author.ToEntity, ct);
-        var channelTask = ResolveChannelAsync(message.Channel, ct);
-
-        await Task.WhenAll(authorTask, channelTask);
-
-        return new MessageDependencies(await authorTask, await channelTask);
-    }
-
-    private async Task<ChannelResolution> ResolveChannelAsync(DiscordChannelDto channel, CancellationToken ct)
-    {
-        // Resolve channel and its guild dependency (struct implicitly converts to nullable)
-        var guildTask = channel.Guild is { } g
-            ? ResolveAsync(g.DiscordId, g.ToEntity, ct).ContinueWith(t => (EntityResolution<DiscordGuild>?)t.Result, ct, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default)
-            : Task.FromResult<EntityResolution<DiscordGuild>?>(null);
-
-        var channelTask = ResolveAsync(channel.DiscordId, channel.ToEntity, ct);
-
-        await Task.WhenAll(guildTask, channelTask);
-
-        return new ChannelResolution(await channelTask, await guildTask);
-    }
-
-    private async Task<EntityResolution<TEntity>> ResolveAsync<TEntity>(
-        ulong discordId,
-        Func<TEntity> createEntity,
-        CancellationToken ct)
-        where TEntity : DiscordEntity
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-
-        var existingId = await db.Set<TEntity>()
-            .AsNoTracking()
-            .Where(e => e.DiscordId == discordId)
-            .Select(e => (int?)e.Id)
-            .FirstOrDefaultAsync(ct);
-
-        return new EntityResolution<TEntity>(existingId, discordId, createEntity);
-    }
-
-
-    private async Task LinkReferencedMessageAsync(
-        AppDbContext db,
-        DiscordMessage messageEntity,
-        ulong referencedDiscordId,
-        CancellationToken ct)
-    {
-        var refMessageId = await db.Messages
-            .Where(m => m.DiscordId == referencedDiscordId)
-            .Select(m => (int?)m.Id)
-            .FirstOrDefaultAsync(ct);
-
-        if (refMessageId is { } id)
-        {
-            db.Entry(messageEntity).Property(REFERENCED_MESSAGE_ID_PROPERTY).CurrentValue = id;
-            LogLinkedReferencedMessage(id);
-        }
-        else
-        {
-            LogReferencedMessageNotFound(referencedDiscordId);
-        }
-    }
-
-    private static TEntity Materialize<TEntity>(AppDbContext db, EntityResolution<TEntity> resolution)
-        where TEntity : DiscordEntity
-    {
-        var entity = resolution.CreateNew();
-
-        if (resolution.Exists)
-        {
-            db.Entry(entity).Property(e => e.Id).CurrentValue = resolution.ExistingId!.Value;
-            db.Entry(entity).State = EntityState.Unchanged;
-        }
-        else
-        {
-            db.Set<TEntity>().Add(entity);
-        }
-
-        return entity;
-    }
-
-    private static TEntity? MaterializeOptional<TEntity>(AppDbContext db, EntityResolution<TEntity>? resolution)
-        where TEntity : DiscordEntity
-        => resolution is { } r ? Materialize(db, r) : null;
 
     /// <summary>
     /// Gets an existing entity by Discord ID or throws if not found.
@@ -565,29 +490,3 @@ public sealed partial class DiscordEntityManager(
         return new EntityReferenceDto(entity.Id, NO_DISCORD_ID);
     }
 }
-
-/// <summary>
-/// Result of resolving a Discord entity by its Discord ID.
-/// </summary>
-internal readonly record struct EntityResolution<TEntity>(
-    int? ExistingId,
-    ulong DiscordId,
-    Func<TEntity> CreateNew)
-    where TEntity : DiscordEntity
-{
-    public bool Exists => ExistingId.HasValue;
-}
-
-/// <summary>
-/// Channel with its Guild dependency.
-/// </summary>
-internal sealed record ChannelResolution(
-    EntityResolution<DiscordChannel> Channel,
-    EntityResolution<DiscordGuild>? Guild);
-
-/// <summary>
-/// All dependencies for a message: Author and Channel (Channel contains Guild).
-/// </summary>
-internal sealed record MessageDependencies(
-    EntityResolution<DiscordUser> Author,
-    ChannelResolution Channel);
