@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.Rabbitmq" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Infrastructure\DiscordBot.Service.WebSearch.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Contracts\DiscordBot.Contracts.csproj" />
   </ItemGroup>

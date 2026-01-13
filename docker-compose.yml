@@ -19,6 +19,29 @@ services:
       retries: 10
       start_period: 30s
 
+  # RabbitMQ message broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: discordbot-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-discordbot}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_DEFAULT_VHOST=discordbot
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - discordbot-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # Main Discord Bot service
   bot:
     build:
@@ -31,16 +54,19 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_URLS=http://+:8080
-      # Wolverine service discovery (Docker container names)
-      - Wolverine__RecordKeepingHost=recordkeeping
-      - Wolverine__WeatherHost=weather
-      - Wolverine__WebSearchHost=websearch
+      # RabbitMQ configuration
+      - DBOT_RabbitMQ__Host=rabbitmq
+      - DBOT_RabbitMQ__VirtualHost=discordbot
+      - DBOT_RabbitMQ__Username=${RABBITMQ_USER:-discordbot}
+      - DBOT_RabbitMQ__Password=${RABBITMQ_PASS}
       # Bot configuration (override via .env file or secrets)
       - DBOT_Bot__Token=${BOT_TOKEN}
       - DBOT_Bot__GuildId=${GUILD_ID}
       - DBOT_SerilogWriteToDiscordWebhookId=${DISCORD_WEBHOOK_ID}
       - DBOT_SerilogWriteToDiscordWebhookToken=${DISCORD_WEBHOOK_TOKEN}
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       recordkeeping:
         condition: service_healthy
       weather:
@@ -68,9 +94,18 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - DBOT_ConnectionStrings__SqlServer=${SQLSERVER_CONNECTION_STRING}
+      # RabbitMQ configuration
+      - DBOT_RabbitMQ__Host=rabbitmq
+      - DBOT_RabbitMQ__VirtualHost=discordbot
+      - DBOT_RabbitMQ__Username=${RABBITMQ_USER:-discordbot}
+      - DBOT_RabbitMQ__Password=${RABBITMQ_PASS}
     depends_on:
       mssql:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      replicas: 1  # Increase when scaling needed
     networks:
       - discordbot-network
     healthcheck:
@@ -93,6 +128,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - DBOT_OpenWeatherApi__ApiKey=${OPENWEATHER_API_KEY}
       - DBOT_OpenWeatherApi__BaseUrl=https://api.openweathermap.org/data/2.5/
+      # RabbitMQ configuration
+      - DBOT_RabbitMQ__Host=rabbitmq
+      - DBOT_RabbitMQ__VirtualHost=discordbot
+      - DBOT_RabbitMQ__Username=${RABBITMQ_USER:-discordbot}
+      - DBOT_RabbitMQ__Password=${RABBITMQ_PASS}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     networks:
       - discordbot-network
     healthcheck:
@@ -116,6 +159,14 @@ services:
       - DBOT_GoogleApi__ApiKey=${GOOGLE_API_KEY}
       - DBOT_GoogleApi__SearchEngineId=${GOOGLE_SEARCH_ENGINE_ID}
       - DBOT_GoogleApi__BaseUrl=https://www.googleapis.com/customsearch/v1
+      # RabbitMQ configuration
+      - DBOT_RabbitMQ__Host=rabbitmq
+      - DBOT_RabbitMQ__VirtualHost=discordbot
+      - DBOT_RabbitMQ__Username=${RABBITMQ_USER:-discordbot}
+      - DBOT_RabbitMQ__Password=${RABBITMQ_PASS}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     networks:
       - discordbot-network
     healthcheck:
@@ -131,3 +182,4 @@ networks:
 
 volumes:
   mssql-data:
+  rabbitmq-data:

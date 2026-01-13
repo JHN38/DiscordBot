@@ -1,8 +1,9 @@
+using DiscordBot.Service.Weather.Configuration;
 using DiscordBot.Service.Weather.Infrastructure;
 using Serilog;
 using Serilog.Events;
 using Wolverine;
-using Wolverine.Transports.Tcp;
+using Wolverine.RabbitMQ;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Verbose()
@@ -21,13 +22,36 @@ builder.Configuration.AddEnvironmentVariables("DBOT_");
 builder.Services.AddWeatherInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
 
-var wolverineListenHost = builder.Configuration["Wolverine:ListenHost"] ?? "0.0.0.0";
-var wolverineListenPort = builder.Configuration["Wolverine:ListenPort"] ?? "5002";
+// RabbitMQ Configuration
+var rabbitConfig = builder.Configuration
+    .GetSection(RabbitMqConfig.SectionName)
+    .Get<RabbitMqConfig>() ?? new RabbitMqConfig();
+
+// Graceful shutdown configuration
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Host.UseWolverine(opts =>
 {
-    // Listen on all interfaces to accept connections from other Docker containers
-    opts.ListenForMessagesFrom(new Uri($"tcp://{wolverineListenHost}:{wolverineListenPort}"));
+    // RabbitMQ transport configuration
+    opts.UseRabbitMq(rabbit =>
+    {
+        rabbit.HostName = rabbitConfig.Host;
+        rabbit.Port = rabbitConfig.Port;
+        rabbit.VirtualHost = rabbitConfig.VirtualHost;
+        rabbit.UserName = rabbitConfig.Username;
+        rabbit.Password = rabbitConfig.Password;
+    })
+    .AutoProvision();
+
+    // Listen to weather requests queue
+    opts.ListenToRabbitQueue("weather.requests")
+        .PreFetchCount((ushort)rabbitConfig.PrefetchCount)
+        .UseDurableInbox();
+
+
 }, ExtensionDiscovery.ManualOnly);
 
 var app = builder.Build();

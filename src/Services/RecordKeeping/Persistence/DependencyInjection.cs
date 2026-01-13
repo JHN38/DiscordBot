@@ -45,7 +45,14 @@ public static class DependencyInjection
 
             if (configuration.GetConnectionString("SqlServer") is { } sqlServerConnectionString)
             {
-                optionsBuilder.UseSqlServer(sqlServerConnectionString);
+                optionsBuilder.UseSqlServer(sqlServerConnectionString, sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 3,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorNumbersToAdd: null);
+                    sqlOptions.CommandTimeout(30);
+                });
                 return;
             }
 

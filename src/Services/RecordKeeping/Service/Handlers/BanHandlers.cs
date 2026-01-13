@@ -20,6 +20,7 @@ public sealed class SaveBanHandler(IDiscordEntityManager entityManager)
 
 /// <summary>
 /// Handles UpdateBanCommand by marking the ban as inactive (unbanned).
+/// Uses atomic ExecuteUpdateAsync for safe concurrent processing.
 /// </summary>
 public sealed class UpdateBanHandler(IDbContextFactory<AppDbContext> factory)
 {
@@ -27,43 +28,35 @@ public sealed class UpdateBanHandler(IDbContextFactory<AppDbContext> factory)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
-        // Find the user and guild first
-        var userId = await db.Users
+        // Use subqueries to resolve FKs atomically
+        var userIds = db.Users
             .Where(u => u.DiscordId == command.UserId)
-            .Select(u => (int?)u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Select(u => u.Id);
 
-        var guildId = await db.Guilds
+        var guildIds = db.Guilds
             .Where(g => g.DiscordId == command.GuildId)
-            .Select(g => (int?)g.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Select(g => g.Id);
 
-        if (!userId.HasValue || !guildId.HasValue)
-            return;
-
-        // Find the active ban and mark it as inactive
-        var ban = await db.UserBans
-            .Where(b => b.UserId == userId.Value && b.GuildId == guildId.Value && b.IsActive)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (ban is not null)
+        // Find unbanner ID if provided (optional)
+        int? unbannedById = null;
+        if (command.UnbannedById.HasValue)
         {
-            ban.IsActive = false;
-            ban.UnbannedAt = command.UnbannedAt;
-
-            // Optionally resolve the unbanner
-            if (command.UnbannedById.HasValue)
-            {
-                var unbannedById = await db.Users
-                    .Where(u => u.DiscordId == command.UnbannedById.Value)
-                    .Select(u => (int?)u.Id)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (unbannedById.HasValue)
-                    ban.UnbannedById = unbannedById.Value;
-            }
-
-            await db.SaveChangesAsync(cancellationToken);
+            unbannedById = await db.Users
+                .Where(u => u.DiscordId == command.UnbannedById.Value)
+                .Select(u => (int?)u.Id)
+                .FirstOrDefaultAsync(cancellationToken);
         }
+
+        // Atomic update: mark all matching active bans as inactive
+        await db.UserBans
+            .Where(b =>
+                userIds.Contains(b.UserId) &&
+                guildIds.Contains(b.GuildId) &&
+                b.IsActive)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.IsActive, false)
+                .SetProperty(b => b.UnbannedAt, command.UnbannedAt)
+                .SetProperty(b => b.UnbannedById, unbannedById),
+                cancellationToken);
     }
 }

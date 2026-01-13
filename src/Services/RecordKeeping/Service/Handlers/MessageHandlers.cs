@@ -6,6 +6,7 @@ namespace DiscordBot.Service.RecordKeeping.Handlers;
 
 /// <summary>
 /// Handles UpdateMessageCommand by updating message content and edit timestamp.
+/// Uses atomic ExecuteUpdateAsync for safe concurrent processing.
 /// </summary>
 public sealed class UpdateMessageHandler(IDbContextFactory<AppDbContext> factory)
 {
@@ -13,21 +14,19 @@ public sealed class UpdateMessageHandler(IDbContextFactory<AppDbContext> factory
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
-        var message = await db.Messages
-            .FirstOrDefaultAsync(m => m.DiscordId == command.MessageId, cancellationToken);
-
-        if (message is not null)
-        {
-            message.Content = command.Content;
-            message.IsEdited = true;
-            message.EditedTimestamp = command.EditedTimestamp;
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.Messages
+            .Where(m => m.DiscordId == command.MessageId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(m => m.Content, command.Content)
+                .SetProperty(m => m.IsEdited, true)
+                .SetProperty(m => m.EditedTimestamp, command.EditedTimestamp),
+                cancellationToken);
     }
 }
 
 /// <summary>
 /// Handles DeleteMessageCommand by soft-deleting the message.
+/// Uses atomic ExecuteUpdateAsync for safe concurrent processing.
 /// </summary>
 public sealed class DeleteMessageHandler(IDbContextFactory<AppDbContext> factory)
 {
@@ -35,15 +34,12 @@ public sealed class DeleteMessageHandler(IDbContextFactory<AppDbContext> factory
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
-        var message = await db.Messages
-            .FirstOrDefaultAsync(m => m.DiscordId == command.MessageId, cancellationToken);
-
-        if (message is not null)
-        {
-            message.IsDeleted = true;
-            message.DeletedAt = command.DeletedAt;
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.Messages
+            .Where(m => m.DiscordId == command.MessageId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(m => m.IsDeleted, true)
+                .SetProperty(m => m.DeletedAt, command.DeletedAt),
+                cancellationToken);
     }
 }
 

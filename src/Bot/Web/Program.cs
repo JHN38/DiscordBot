@@ -13,7 +13,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.Discord;
 using Wolverine;
-using Wolverine.Transports.Tcp;
+using Wolverine.RabbitMQ;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Verbose()
@@ -99,37 +99,40 @@ builder.Services.AddSingleton((serviceProvider) =>
 
 builder.Services.AddBotCore();
 
-// Wolverine Configuration - service hosts are configurable for Docker
-var recordKeepingHost = builder.Configuration["Wolverine:RecordKeepingHost"] ?? "localhost";
-var weatherHost = builder.Configuration["Wolverine:WeatherHost"] ?? "localhost";
-var webSearchHost = builder.Configuration["Wolverine:WebSearchHost"] ?? "localhost";
+// RabbitMQ Configuration
+var rabbitConfig = builder.Configuration
+    .GetSection(RabbitMqConfig.SectionName)
+    .Get<RabbitMqConfig>() ?? new RabbitMqConfig();
+
+// Graceful shutdown configuration
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Host.UseWolverine(opts =>
 {
-    // Disable scanning of all referenced assemblies, then explicitly include what we need
+    // RabbitMQ transport configuration
+    opts.UseRabbitMq(rabbit =>
+    {
+        rabbit.HostName = rabbitConfig.Host;
+        rabbit.Port = rabbitConfig.Port;
+        rabbit.VirtualHost = rabbitConfig.VirtualHost;
+        rabbit.UserName = rabbitConfig.Username;
+        rabbit.Password = rabbitConfig.Password;
+    })
+    .AutoProvision()
+    .UseConventionalRouting();
+
+    // Publish RecordKeeping commands (fire-and-forget)
+    opts.PublishAllMessages()
+        .ToRabbitExchange("discordbot", exchange => exchange.ExchangeType = Wolverine.RabbitMQ.ExchangeType.Topic);
+
+    // RPC reply handling - Wolverine automatically sets ReplyUri header
+    opts.ListenToRabbitQueue("bot.replies")
+        .ProcessInline();
+
     opts.Discovery.IncludeAssembly(AssemblyReference.Assembly);
-
-    // Configure TCP publishers for each service
-    // RecordKeeping service - handles all command messages
-    opts.Publish(rule =>
-    {
-        rule.MessagesFromNamespace("DiscordBot.Contracts.RecordKeeping");
-        rule.ToServerAndPort(recordKeepingHost, 5001);
-    });
-
-    // Weather service - handles weather queries
-    opts.Publish(rule =>
-    {
-        rule.MessagesFromNamespace("DiscordBot.Contracts.Weather");
-        rule.ToServerAndPort(weatherHost, 5002);
-    });
-
-    // WebSearch service - handles web search queries
-    opts.Publish(rule =>
-    {
-        rule.MessagesFromNamespace("DiscordBot.Contracts.WebSearch");
-        rule.ToServerAndPort(webSearchHost, 5003);
-    });
 }, ExtensionDiscovery.ManualOnly);
 
 var app = builder.Build();

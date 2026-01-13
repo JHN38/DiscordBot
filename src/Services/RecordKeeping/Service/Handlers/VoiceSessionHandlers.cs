@@ -20,6 +20,7 @@ public sealed class SaveVoiceSessionHandler(IDiscordEntityManager entityManager)
 
 /// <summary>
 /// Handles UpdateVoiceSessionCommand by setting the left timestamp.
+/// Uses atomic ExecuteUpdateAsync for safe concurrent processing.
 /// </summary>
 public sealed class UpdateVoiceSessionHandler(IDbContextFactory<AppDbContext> factory)
 {
@@ -27,13 +28,10 @@ public sealed class UpdateVoiceSessionHandler(IDbContextFactory<AppDbContext> fa
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
 
-        var session = await db.VoiceSessions
-            .FirstOrDefaultAsync(v => v.SessionId == command.SessionId, cancellationToken);
-
-        if (session is not null)
-        {
-            session.LeftAt = command.LeftAt;
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.VoiceSessions
+            .Where(v => v.SessionId == command.SessionId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(v => v.LeftAt, command.LeftAt),
+                cancellationToken);
     }
 }

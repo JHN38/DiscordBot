@@ -1,10 +1,12 @@
+using DiscordBot.Service.RecordKeeping.Configuration;
+using DiscordBot.Service.RecordKeeping.Messaging;
 using DiscordBot.Service.RecordKeeping.Persistence;
 using DiscordBot.Service.RecordKeeping.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using Wolverine;
-using Wolverine.Transports.Tcp;
+using Wolverine.RabbitMQ;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Verbose()
@@ -24,13 +26,37 @@ builder.Services.AddPersistence(builder.Configuration, builder.Environment);
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>();
 
-var wolverineListenHost = builder.Configuration["Wolverine:ListenHost"] ?? "0.0.0.0";
-var wolverineListenPort = builder.Configuration["Wolverine:ListenPort"] ?? "5001";
+// RabbitMQ Configuration
+var rabbitConfig = builder.Configuration
+    .GetSection(RabbitMqConfig.SectionName)
+    .Get<RabbitMqConfig>() ?? new RabbitMqConfig();
+
+// Graceful shutdown configuration
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.ShutdownTimeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Host.UseWolverine(opts =>
 {
-    // Listen on all interfaces to accept connections from other Docker containers
-    opts.ListenForMessagesFrom(new Uri($"tcp://{wolverineListenHost}:{wolverineListenPort}"));
+    // RabbitMQ transport configuration
+    opts.UseRabbitMq(rabbit =>
+    {
+        rabbit.HostName = rabbitConfig.Host;
+        rabbit.Port = rabbitConfig.Port;
+        rabbit.VirtualHost = rabbitConfig.VirtualHost;
+        rabbit.UserName = rabbitConfig.Username;
+        rabbit.Password = rabbitConfig.Password;
+    })
+    .AutoProvision();
+
+    // Listen to commands queue - supports competing consumers
+    // Wolverine auto-provisions the queue; use conventional routing for message dispatch
+    opts.ListenToRabbitQueue(RabbitMqTopology.CommandsQueue)
+        .PreFetchCount((ushort)rabbitConfig.PrefetchCount)
+        .UseDurableInbox();
+
+
 }, ExtensionDiscovery.ManualOnly);
 
 var app = builder.Build();
